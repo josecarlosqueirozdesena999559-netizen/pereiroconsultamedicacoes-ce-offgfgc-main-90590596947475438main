@@ -95,44 +95,80 @@ export default {
         "splash-logo": {
           "0%": {
             opacity: "0",
-            transform: "scale(0.7)",
+            transform: "scale(0.5) translateY(20px)",
           },
-          "50%": {
+          "60%": {
             opacity: "1",
-            transform: "scale(1.05)",
+            transform: "scale(1.08) translateY(-5px)",
           },
           "100%": {
             opacity: "1",
-            transform: "scale(1)",
+            transform: "scale(1) translateY(0)",
           },
         },
-        "splash-pulse": {
+        "splash-text": {
+          "0%": {
+            opacity: "0",
+            transform: "translateY(15px)",
+          },
+          "100%": {
+            opacity: "1",
+            transform: "translateY(0)",
+          },
+        },
+        "splash-loader": {
+          "0%": {
+            opacity: "0",
+          },
+          "100%": {
+            opacity: "1",
+          },
+        },
+        "splash-progress": {
+          "0%": {
+            width: "0%",
+          },
+          "100%": {
+            width: "100%",
+          },
+        },
+        "splash-glow": {
           "0%, 100%": {
+            opacity: "0.2",
             transform: "scale(1)",
           },
           "50%": {
-            transform: "scale(1.03)",
+            opacity: "0.4",
+            transform: "scale(1.1)",
           },
         },
-        "splash-dot": {
-          "0%, 80%, 100%": {
-            opacity: "0.3",
-            transform: "scale(0.8)",
+        "splash-float": {
+          "0%, 100%": {
+            transform: "translateY(0) scale(1)",
           },
-          "40%": {
-            opacity: "1",
-            transform: "scale(1)",
+          "50%": {
+            transform: "translateY(-20px) scale(1.05)",
+          },
+        },
+        "splash-float-delayed": {
+          "0%, 100%": {
+            transform: "translateY(0) scale(1)",
+          },
+          "50%": {
+            transform: "translateY(15px) scale(1.03)",
           },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "splash-logo": "splash-logo 0.8s ease-out forwards",
-        "splash-pulse": "splash-pulse 1.5s ease-in-out infinite 0.8s",
-        "splash-dot-1": "splash-dot 1.4s ease-in-out infinite",
-        "splash-dot-2": "splash-dot 1.4s ease-in-out 0.2s infinite",
-        "splash-dot-3": "splash-dot 1.4s ease-in-out 0.4s infinite",
+        "splash-logo": "splash-logo 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) forwards",
+        "splash-text": "splash-text 0.7s ease-out 0.4s forwards",
+        "splash-loader": "splash-loader 0.5s ease-out 0.8s forwards",
+        "splash-progress": "splash-progress 1.8s ease-in-out 1s forwards",
+        "splash-glow": "splash-glow 2s ease-in-out infinite",
+        "splash-float": "splash-float 4s ease-in-out infinite",
+        "splash-float-delayed": "splash-float-delayed 5s ease-in-out infinite 0.5s",
       },
     },
   },
