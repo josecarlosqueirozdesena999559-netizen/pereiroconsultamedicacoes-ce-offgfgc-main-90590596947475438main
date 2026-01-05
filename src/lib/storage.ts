@@ -494,6 +494,23 @@ export const savePDF = async (ubsId: string, file: File): Promise<string> => {
       throw insertError;
     }
 
+    // 6. Disparar push notification para usuários inscritos nessa UBS
+    try {
+      const { error: pushError } = await supabase.functions.invoke('send-push-notification', {
+        body: { ubs_id: ubsId }
+      });
+      
+      if (pushError) {
+        console.error('Erro ao enviar push notification:', pushError);
+        // Não lança erro pois o upload foi bem sucedido
+      } else {
+        console.log('Push notification enviado com sucesso para UBS:', ubsId);
+      }
+    } catch (pushError) {
+      console.error('Erro ao chamar edge function de push:', pushError);
+      // Não lança erro pois o upload foi bem sucedido
+    }
+
     // Retorna o timestamp do banco de dados para ser usado no frontend
     return insertData.data_upload;
   } catch (error) {
