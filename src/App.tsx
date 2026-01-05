@@ -105,8 +105,10 @@ const AdminApp = () => {
  * qualquer outro => AdminApp (site admin)
  */
 const App = () => {
-  // Decisão feita uma única vez no mount
-  if (isPublicAppHost()) {
+  const isPublic = isPublicAppHost();
+  console.log('[ConsultMed] Host:', window.location.hostname, '| Modo:', isPublic ? 'PÚBLICO' : 'ADMIN');
+  
+  if (isPublic) {
     return <PublicApp />;
   }
   return <AdminApp />;
