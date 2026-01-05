@@ -14,6 +14,16 @@ import PWAInstallPrompt from "./components/PWAInstallPrompt";
 import { AuthProvider } from "./hooks/useAuth";
 import { ChatWidget } from "./components/ChatWidget";
 
+// Public app pages
+import PublicHome from "./pages/public/PublicHome";
+import UBSDetail from "./pages/public/UBSDetail";
+
+// Detecta se estamos no subdomínio do app público
+const isPublicAppHost = () => {
+  const hostname = window.location.hostname;
+  return hostname.startsWith("app.") || hostname.includes("app.consultmedpereiro");
+};
+
 // Wrapper para ocultar ChatWidget no Dashboard
 const ChatWidgetWrapper = () => {
   const location = useLocation();
@@ -23,8 +33,35 @@ const ChatWidgetWrapper = () => {
   return <ChatWidget />;
 };
 
-
 const queryClient = new QueryClient();
+
+// Rotas do app público (vitrine sem login)
+const PublicAppRoutes = () => (
+  <Routes>
+    <Route path="/" element={<PublicHome />} />
+    <Route path="/ubs/:id" element={<UBSDetail />} />
+    <Route path="*" element={<PublicHome />} />
+  </Routes>
+);
+
+// Rotas do site administrativo (com login)
+const AdminRoutes = () => (
+  <>
+    <Routes>
+      <Route path="/" element={<Index />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/medicacoes-auto-custo" element={<MedicacoesAutoCusto />} />
+      <Route path="/consulta-sus" element={<ConsultaSUS />} />
+      {/* Rotas públicas para teste: /app/* */}
+      <Route path="/app" element={<PublicHome />} />
+      <Route path="/app/ubs/:id" element={<UBSDetail />} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+    <PWAInstallPrompt />
+    <ChatWidgetWrapper />
+  </>
+);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -33,16 +70,7 @@ const App = () => (
       <Sonner />
       <AuthProvider>
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/medicacoes-auto-custo" element={<MedicacoesAutoCusto />} />
-            <Route path="/consulta-sus" element={<ConsultaSUS />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <PWAInstallPrompt />
-          <ChatWidgetWrapper />
+          {isPublicAppHost() ? <PublicAppRoutes /> : <AdminRoutes />}
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>
