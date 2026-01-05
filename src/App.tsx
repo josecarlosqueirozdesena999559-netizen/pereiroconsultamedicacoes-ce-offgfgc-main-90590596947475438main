@@ -102,15 +102,15 @@ const AdminApp = () => {
 
 /**
  * DECISÃO DE RENDERIZAÇÃO POR HOST
- * app.* => PublicApp (vitrine pública)
- * qualquer outro => AdminApp (site admin)
+ * app.* => PublicApp (vitrine pública) com splash screen
+ * qualquer outro => AdminApp (site admin) sem splash
  */
 const App = () => {
-  const [showSplash, setShowSplash] = useState(true);
   const isPublic = isPublicAppHost();
+  const [showSplash, setShowSplash] = useState(isPublic);
   console.log('[ConsultMed] Host:', window.location.hostname, '| Modo:', isPublic ? 'PÚBLICO' : 'ADMIN');
 
-  if (showSplash) {
+  if (showSplash && isPublic) {
     return <SplashScreen onFinish={() => setShowSplash(false)} />;
   }
   
