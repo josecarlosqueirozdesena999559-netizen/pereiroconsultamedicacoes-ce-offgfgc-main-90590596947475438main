@@ -392,6 +392,65 @@ export type Database = {
         }
         Relationships: []
       }
+      push_subscriptions: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          token: string
+          ubs_id: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          token: string
+          ubs_id: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          token?: string
+          ubs_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_ubs_id_fkey"
+            columns: ["ubs_id"]
+            isOneToOne: false
+            referencedRelation: "postos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      push_tokens: {
+        Row: {
+          created_at: string
+          id: string
+          last_seen_at: string
+          opt_in: boolean
+          platform: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_seen_at?: string
+          opt_in?: boolean
+          platform?: string
+          token: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_seen_at?: string
+          opt_in?: boolean
+          platform?: string
+          token?: string
+        }
+        Relationships: []
+      }
       update_checks: {
         Row: {
           created_at: string | null
