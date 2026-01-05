@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "./hooks/useAuth";
+import SplashScreen from "./components/SplashScreen";
 
 // Lazy load para separação completa
 const Index = React.lazy(() => import("./pages/Index"));
@@ -105,8 +106,13 @@ const AdminApp = () => {
  * qualquer outro => AdminApp (site admin)
  */
 const App = () => {
+  const [showSplash, setShowSplash] = useState(true);
   const isPublic = isPublicAppHost();
   console.log('[ConsultMed] Host:', window.location.hostname, '| Modo:', isPublic ? 'PÚBLICO' : 'ADMIN');
+
+  if (showSplash) {
+    return <SplashScreen onFinish={() => setShowSplash(false)} />;
+  }
   
   if (isPublic) {
     return <PublicApp />;
