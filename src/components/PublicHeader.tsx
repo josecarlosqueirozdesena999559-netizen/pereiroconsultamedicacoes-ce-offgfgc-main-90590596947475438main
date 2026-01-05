@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Home } from "lucide-react";
-import logoPereiro from "@/assets/logo-pereiro.png";
 
 interface PublicHeaderProps {
   showBack?: boolean;
@@ -21,13 +20,6 @@ const PublicHeader = ({ showBack = false }: PublicHeaderProps) => {
           )}
           
           <Link to="/" className="flex items-center gap-3">
-            <div className="bg-white rounded-lg p-1.5 shadow-md">
-              <img 
-                src={logoPereiro} 
-                alt="Prefeitura de Pereiro" 
-                className="h-8 w-8 object-contain"
-              />
-            </div>
             <div className="flex flex-col">
               <span className="font-bold text-lg text-primary-foreground leading-tight">
                 ConsultMed
