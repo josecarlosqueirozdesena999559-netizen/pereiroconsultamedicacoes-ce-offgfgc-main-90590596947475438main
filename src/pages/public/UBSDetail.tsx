@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { 
   ArrowLeft, 
   MapPin, 
@@ -12,14 +11,12 @@ import {
   Phone, 
   FileText, 
   Download,
-  Search,
-  Pill,
   Calendar,
   Building2,
   Loader2
 } from "lucide-react";
 import PublicHeader from "@/components/PublicHeader";
-import PublicChatWidget from "@/components/PublicChatWidget";
+import { NotificationPreferences } from "@/components/NotificationPreferences";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -39,22 +36,12 @@ interface ArquivoPDF {
   data_upload: string | null;
 }
 
-interface Medicamento {
-  id: string;
-  nome: string;
-  quantidade: string | null;
-  marcas: string[] | null;
-}
-
 const UBSDetail = () => {
   const { id } = useParams<{ id: string }>();
   
   const [posto, setPosto] = useState<Posto | null>(null);
   const [arquivo, setArquivo] = useState<ArquivoPDF | null>(null);
-  const [medicamentos, setMedicamentos] = useState<Medicamento[]>([]);
-  const [searchMed, setSearchMed] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingMeds, setIsLoadingMeds] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -85,29 +72,12 @@ const UBSDetail = () => {
       if (arquivoData) {
         setArquivo(arquivoData);
       }
-
-      // Fetch medicamentos
-      setIsLoadingMeds(true);
-      const { data: medsData } = await supabase
-        .from("medicamentos")
-        .select("id, nome, quantidade, marcas")
-        .eq("posto_id", id)
-        .order("nome");
-      
-      if (medsData) {
-        setMedicamentos(medsData);
-      }
-      setIsLoadingMeds(false);
       
       setIsLoading(false);
     };
 
     fetchData();
   }, [id]);
-
-  const filteredMedicamentos = medicamentos.filter((med) =>
-    med.nome.toLowerCase().includes(searchMed.toLowerCase())
-  );
 
   if (isLoading) {
     return (
@@ -223,72 +193,9 @@ const UBSDetail = () => {
           </CardContent>
         </Card>
 
-        {/* Medicamentos Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Pill className="h-5 w-5 text-primary" />
-              Medicamentos Disponíveis
-            </CardTitle>
-            <CardDescription>
-              {medicamentos.length} medicamento(s) cadastrado(s)
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {/* Search */}
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                type="text"
-                placeholder="Buscar medicamento..."
-                value={searchMed}
-                onChange={(e) => setSearchMed(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-
-            {isLoadingMeds ? (
-              <div className="flex justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              </div>
-            ) : filteredMedicamentos.length > 0 ? (
-              <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                {filteredMedicamentos.map((med) => (
-                  <div
-                    key={med.id}
-                    className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                  >
-                    <div className="flex-1">
-                      <p className="font-medium">{med.nome}</p>
-                      {med.marcas && med.marcas.length > 0 && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Marcas: {med.marcas.join(", ")}
-                        </p>
-                      )}
-                    </div>
-                    {med.quantidade && (
-                      <Badge variant="outline" className="ml-2">
-                        Qtd: {med.quantidade}
-                      </Badge>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <Pill className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p>
-                  {searchMed
-                    ? `Nenhum medicamento encontrado para "${searchMed}"`
-                    : "Nenhum medicamento cadastrado"}
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Notification Preferences Widget */}
+        <NotificationPreferences />
       </main>
-
-      <PublicChatWidget postoId={id} postoNome={posto.nome} />
     </div>
   );
 };
