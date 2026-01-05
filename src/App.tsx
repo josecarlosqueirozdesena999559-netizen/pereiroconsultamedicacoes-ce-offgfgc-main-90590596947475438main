@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { AuthProvider } from "./hooks/useAuth";
 
 // Lazy load para separação completa
 const Index = React.lazy(() => import("./pages/Index"));
@@ -72,9 +73,6 @@ const ChatWidgetWrapper = () => {
  * Mantém comportamento original com AuthProvider
  */
 const AdminApp = () => {
-  // Import dinâmico do AuthProvider apenas para admin
-  const { AuthProvider } = require("./hooks/useAuth");
-  
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
