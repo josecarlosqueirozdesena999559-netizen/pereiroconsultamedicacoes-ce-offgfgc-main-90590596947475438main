@@ -9,28 +9,30 @@ interface PublicHeaderProps {
 
 const PublicHeader = ({ showBack = false }: PublicHeaderProps) => {
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full bg-primary text-primary-foreground shadow-lg">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-4">
           {showBack && (
             <Link to="/">
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary-foreground/10">
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
           )}
           
           <Link to="/" className="flex items-center gap-3">
-            <img 
-              src={logoPereiro} 
-              alt="Prefeitura de Pereiro" 
-              className="h-10 w-10 object-contain"
-            />
+            <div className="bg-white rounded-lg p-1.5 shadow-md">
+              <img 
+                src={logoPereiro} 
+                alt="Prefeitura de Pereiro" 
+                className="h-8 w-8 object-contain"
+              />
+            </div>
             <div className="flex flex-col">
-              <span className="font-bold text-lg text-foreground leading-tight">
+              <span className="font-bold text-lg text-primary-foreground leading-tight">
                 ConsultMed
               </span>
-              <span className="text-xs text-muted-foreground leading-tight">
+              <span className="text-xs text-primary-foreground/80 leading-tight">
                 Pereiro - CE
               </span>
             </div>
@@ -39,7 +41,7 @@ const PublicHeader = ({ showBack = false }: PublicHeaderProps) => {
 
         <nav className="flex items-center gap-2">
           <Link to="/">
-            <Button variant="ghost" size="sm" className="gap-2">
+            <Button variant="ghost" size="sm" className="gap-2 text-primary-foreground hover:bg-primary-foreground/10">
               <Home className="h-4 w-4" />
               <span className="hidden sm:inline">Início</span>
             </Button>
