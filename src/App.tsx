@@ -4,87 +4,114 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-import Index from "./pages/Index";
-import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
-import MedicacoesAutoCusto from "./pages/MedicacoesAutoCusto";
-import ConsultaSUS from "./pages/ConsultaSUS";
-import NotFound from "./pages/NotFound";
-import PWAInstallPrompt from "./components/PWAInstallPrompt";
-import { AuthProvider } from "./hooks/useAuth";
-import { ChatWidget } from "./components/ChatWidget";
 
-// Public app pages
-import PublicHome from "./pages/public/PublicHome";
-import UBSDetail from "./pages/public/UBSDetail";
+// Lazy load para separação completa
+const Index = React.lazy(() => import("./pages/Index"));
+const Login = React.lazy(() => import("./pages/Login"));
+const Dashboard = React.lazy(() => import("./pages/Dashboard"));
+const MedicacoesAutoCusto = React.lazy(() => import("./pages/MedicacoesAutoCusto"));
+const ConsultaSUS = React.lazy(() => import("./pages/ConsultaSUS"));
+const NotFound = React.lazy(() => import("./pages/NotFound"));
+const PWAInstallPrompt = React.lazy(() => import("./components/PWAInstallPrompt"));
+const ChatWidget = React.lazy(() => import("./components/ChatWidget").then(m => ({ default: m.ChatWidget })));
+
+// Public app pages - carregados apenas no subdomínio app.
+const PublicHome = React.lazy(() => import("./pages/public/PublicHome"));
+const UBSDetail = React.lazy(() => import("./pages/public/UBSDetail"));
 
 /**
  * Detecta se estamos no subdomínio do app público (app.consultmedpereiro.com)
  * Retorna TRUE apenas para hosts que começam com "app."
- * O domínio www.consultmedpereiro.com NÃO é afetado - continua com rotas admin
  */
 const isPublicAppHost = (): boolean => {
   const hostname = window.location.hostname;
-  // Apenas hosts que começam com "app." são tratados como app público
   return hostname.startsWith("app.");
-};
-
-// Wrapper para ocultar ChatWidget no Dashboard
-const ChatWidgetWrapper = () => {
-  const location = useLocation();
-  const isDashboard = location.pathname === '/dashboard';
-  
-  if (isDashboard) return null;
-  return <ChatWidget />;
 };
 
 const queryClient = new QueryClient();
 
 /**
- * Rotas do app público (vitrine sem login)
- * Acessíveis APENAS via app.consultmedpereiro.com
- * Somente leitura - sem endpoints de escrita
+ * APP PÚBLICO - Vitrine somente leitura
+ * Renderizado APENAS quando hostname começa com "app."
+ * SEM AuthProvider, SEM guards, SEM rotas admin
  */
-const PublicAppRoutes = () => (
-  <Routes>
-    <Route path="/" element={<PublicHome />} />
-    <Route path="/ubs/:id" element={<UBSDetail />} />
-    <Route path="*" element={<PublicHome />} />
-  </Routes>
-);
-
-/**
- * Rotas do site administrativo (com login)
- * Acessíveis via www.consultmedpereiro.com
- * Mantém comportamento original - NÃO alterado
- */
-const AdminRoutes = () => (
-  <>
-    <Routes>
-      <Route path="/" element={<Index />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/medicacoes-auto-custo" element={<MedicacoesAutoCusto />} />
-      <Route path="/consulta-sus" element={<ConsultaSUS />} />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
-    <PWAInstallPrompt />
-    <ChatWidgetWrapper />
-  </>
-);
-
-const App = () => (
+const PublicApp = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <AuthProvider>
-        <BrowserRouter>
-          {isPublicAppHost() ? <PublicAppRoutes /> : <AdminRoutes />}
-        </BrowserRouter>
-      </AuthProvider>
+      <BrowserRouter>
+        <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center">Carregando...</div>}>
+          <Routes>
+            <Route path="/" element={<PublicHome />} />
+            <Route path="/ubs/:id" element={<UBSDetail />} />
+            <Route path="*" element={<PublicHome />} />
+          </Routes>
+        </React.Suspense>
+      </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );
+
+// Wrapper para ocultar ChatWidget no Dashboard (apenas admin)
+const ChatWidgetWrapper = () => {
+  const location = useLocation();
+  const isDashboard = location.pathname === '/dashboard';
+  
+  if (isDashboard) return null;
+  return (
+    <React.Suspense fallback={null}>
+      <ChatWidget />
+    </React.Suspense>
+  );
+};
+
+/**
+ * APP ADMIN - Site com login
+ * Renderizado para www, domínio raiz, localhost, etc.
+ * Mantém comportamento original com AuthProvider
+ */
+const AdminApp = () => {
+  // Import dinâmico do AuthProvider apenas para admin
+  const { AuthProvider } = require("./hooks/useAuth");
+  
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <AuthProvider>
+          <BrowserRouter>
+            <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center">Carregando...</div>}>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/medicacoes-auto-custo" element={<MedicacoesAutoCusto />} />
+                <Route path="/consulta-sus" element={<ConsultaSUS />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+              <PWAInstallPrompt />
+              <ChatWidgetWrapper />
+            </React.Suspense>
+          </BrowserRouter>
+        </AuthProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
+
+/**
+ * DECISÃO DE RENDERIZAÇÃO POR HOST
+ * app.* => PublicApp (vitrine pública)
+ * qualquer outro => AdminApp (site admin)
+ */
+const App = () => {
+  // Decisão feita uma única vez no mount
+  if (isPublicAppHost()) {
+    return <PublicApp />;
+  }
+  return <AdminApp />;
+};
 
 export default App;
