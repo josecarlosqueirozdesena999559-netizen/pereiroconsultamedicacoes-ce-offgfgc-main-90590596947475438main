@@ -11,7 +11,6 @@ import {
   Phone, 
   FileText, 
   Download,
-  ExternalLink,
   Calendar,
   Building2,
   Loader2
@@ -170,38 +169,22 @@ const UBSDetail = () => {
           <CardContent>
             {arquivo ? (
               <div className="space-y-4">
-                {/* Mobile: Show action buttons */}
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <a href={arquivo.url} target="_blank" rel="noopener noreferrer" className="flex-1 sm:flex-none">
-                    <Button className="w-full sm:w-auto" variant="outline">
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      Visualizar PDF
-                    </Button>
-                  </a>
-                  <a href={arquivo.url} download className="flex-1 sm:flex-none">
-                    <Button className="w-full sm:w-auto">
+                {/* Download button */}
+                <div className="flex justify-end">
+                  <a href={arquivo.url} download>
+                    <Button variant="outline">
                       <Download className="h-4 w-4 mr-2" />
                       Baixar PDF
                     </Button>
                   </a>
                 </div>
-
-                {/* Mobile: Info card */}
-                <div className="md:hidden bg-muted/50 rounded-lg p-4 text-center">
-                  <FileText className="h-10 w-10 mx-auto mb-2 text-primary" />
-                  <p className="text-sm text-muted-foreground">
-                    Toque em "Visualizar PDF" para abrir o relatório completo de medicamentos em uma nova aba.
-                  </p>
-                </div>
                 
-                {/* Desktop: PDF Embed */}
-                <div className="hidden md:block">
-                  <iframe
-                    src={arquivo.url}
-                    className="w-full h-[500px] rounded-lg border"
-                    title="PDF de Medicamentos"
-                  />
-                </div>
+                {/* PDF Embed - always visible */}
+                <iframe
+                  src={arquivo.url}
+                  className="w-full h-[70vh] min-h-[400px] rounded-lg border"
+                  title="PDF de Medicamentos"
+                />
               </div>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
@@ -212,8 +195,8 @@ const UBSDetail = () => {
           </CardContent>
         </Card>
 
-        {/* Notification Preferences Widget */}
-        <NotificationPreferences />
+        {/* Notification Preferences Widget - specific to this UBS */}
+        <NotificationPreferences ubsId={id} ubsNome={posto.nome} />
       </main>
 
       <ChatWidget />
