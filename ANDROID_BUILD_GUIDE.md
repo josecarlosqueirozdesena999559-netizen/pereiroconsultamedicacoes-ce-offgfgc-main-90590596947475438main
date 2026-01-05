@@ -1,13 +1,29 @@
 # Guia de Build - App Android (Capacitor)
 
-Este documento contém instruções para gerar o APK/AAB do app ConsultMed Pereiro para publicação na Google Play Store.
+Este documento contém instruções para gerar o APK/AAB do app **ConsultMed Pereiro** para publicação na Google Play Store.
+
+## Arquitetura do App
+
+O app Android funciona como um "wrapper" nativo que carrega a vitrine pública em `https://app.consultmedpereiro.com`.
+
+**Características:**
+- ✅ Atualizações automáticas sem rebuild do APK
+- ✅ Somente leitura (consulta de UBS e medicamentos)
+- ✅ Sem login necessário
+- ✅ Funciona offline via cache do WebView
+
+**Importante:** O domínio `www.consultmedpereiro.com` NÃO é afetado. Ele continua funcionando como painel administrativo com login.
+
+---
 
 ## Pré-requisitos
 
 - Node.js 18+
-- Android Studio instalado
+- Android Studio instalado (Arctic Fox ou superior)
 - JDK 17+
 - Git
+
+---
 
 ## Configuração Inicial
 
@@ -43,10 +59,12 @@ npm run build
 npx cap sync android
 ```
 
+---
+
 ## Desenvolvimento (Hot Reload)
 
-Durante o desenvolvimento, o app abrirá diretamente o URL do Lovable Preview.
-Isso permite testar mudanças em tempo real sem rebuild.
+O app está configurado para carregar `https://app.consultmedpereiro.com` diretamente.
+Mudanças no código refletem automaticamente no app sem rebuild.
 
 ### Executar no emulador ou dispositivo
 
@@ -60,42 +78,52 @@ Ou abra no Android Studio:
 npx cap open android
 ```
 
-## Build para Produção
+---
 
-### 1. Atualizar capacitor.config.ts
+## Modos de Operação
 
-Para produção, remova ou comente a seção `server`:
+### Modo 1: App Conectado (Recomendado para Produção)
+
+O `capacitor.config.ts` está configurado para carregar a URL pública:
 
 ```typescript
-import type { CapacitorConfig } from '@capacitor/cli';
-
-const config: CapacitorConfig = {
-  appId: 'app.lovable.consultmedpereiro',
-  appName: 'ConsultMed Pereiro',
-  webDir: 'dist',
-  // Remover server para produção - o app usará os assets locais
-  // server: {
-  //   url: 'https://app.consultmedpereiro.com',
-  //   cleartext: true
-  // },
-  android: {
-    allowMixedContent: true
-  }
-};
-
-export default config;
+server: {
+  url: 'https://app.consultmedpereiro.com',
+  cleartext: true
+}
 ```
 
-### 2. Rebuild
+**Vantagens:**
+- Atualizações instantâneas sem rebuild
+- Menor tamanho do APK
+- Dados sempre atualizados
+
+**Desvantagem:**
+- Requer conexão com internet
+
+### Modo 2: App Offline (Assets Locais)
+
+Para distribuição offline, comente a seção `server`:
+
+```typescript
+// server: {
+//   url: 'https://app.consultmedpereiro.com',
+//   cleartext: true
+// },
+```
+
+Depois:
 
 ```bash
 npm run build
 npx cap sync android
 ```
 
-### 3. Gerar AAB (Android App Bundle)
+---
 
-Abra o projeto no Android Studio:
+## Build para Produção (Google Play)
+
+### 1. Gerar AAB (Android App Bundle)
 
 ```bash
 npx cap open android
@@ -113,6 +141,22 @@ O arquivo `.aab` será gerado em:
 android/app/build/outputs/bundle/release/app-release.aab
 ```
 
+### 2. Gerar APK (para testes)
+
+Para gerar um APK para testes (não para Play Store):
+
+```bash
+cd android
+./gradlew assembleRelease
+```
+
+O APK estará em:
+```
+android/app/build/outputs/apk/release/app-release-unsigned.apk
+```
+
+---
+
 ## Configurações do App
 
 ### Ícones
@@ -124,25 +168,44 @@ Use o [Android Asset Studio](https://romannurik.github.io/AndroidAssetStudio/) p
 
 ### Splash Screen
 
-Configure em:
-- `android/app/src/main/res/drawable/splash.xml`
+Configurado em `capacitor.config.ts`:
 
-### Permissões
+```typescript
+plugins: {
+  SplashScreen: {
+    launchShowDuration: 2000,
+    backgroundColor: "#1a5f2a",  // Verde institucional
+    showSpinner: false,
+    androidScaleType: "CENTER_CROP"
+  }
+}
+```
 
-O arquivo `AndroidManifest.xml` está em:
-- `android/app/src/main/AndroidManifest.xml`
+### Cores da Status Bar
 
-Permissões padrão para este app:
-- INTERNET (acesso à rede)
+```typescript
+StatusBar: {
+  backgroundColor: "#1a5f2a",
+  style: "LIGHT"
+}
+```
+
+---
 
 ## Publicação na Play Store
 
 1. Acesse o [Google Play Console](https://play.google.com/console)
 2. Crie um novo app
-3. Preencha as informações do app
+3. Preencha as informações:
+   - **Nome:** ConsultMed Pereiro
+   - **Categoria:** Saúde e Fitness > Médico
+   - **Descrição curta:** Consulte medicamentos nas UBS de Pereiro
 4. Faça upload do AAB gerado
-5. Configure preços e distribuição
-6. Envie para revisão
+5. Configure preços (Gratuito)
+6. Preencha a política de privacidade
+7. Envie para revisão
+
+---
 
 ## Troubleshooting
 
@@ -155,7 +218,6 @@ sdk.dir=/caminho/para/seu/Android/Sdk
 
 ### Erro de versão do Gradle
 
-Atualize o Gradle wrapper:
 ```bash
 cd android
 ./gradlew wrapper --gradle-version 8.0
@@ -170,7 +232,15 @@ cd ..
 npx cap sync android
 ```
 
-## Estrutura do App
+### App não carrega a URL
+
+1. Verifique se `app.consultmedpereiro.com` está acessível
+2. Certifique-se que `cleartext: true` está no config
+3. Verifique a conexão de internet do dispositivo
+
+---
+
+## Estrutura do Projeto
 
 ```
 /
@@ -185,14 +255,20 @@ npx cap sync android
 └── dist/                  # Build do app web (gerado por npm run build)
 ```
 
-## Configuração do Subdomínio
+---
 
-Para produção, configure o subdomínio `app.consultmedpereiro.com` apontando para o deploy do Lovable ou seu servidor de hospedagem.
+## Subdomínios
 
-O app Android usará este subdomínio quando configurado com a URL no `capacitor.config.ts`.
+| Domínio | Função |
+|---------|--------|
+| `app.consultmedpereiro.com` | Vitrine pública (somente leitura) |
+| `www.consultmedpereiro.com` | Painel administrativo (com login) |
 
 ---
 
-**Dúvidas?** Consulte a documentação oficial:
+## Dúvidas?
+
+Consulte a documentação oficial:
 - [Capacitor Docs](https://capacitorjs.com/docs)
 - [Lovable Mobile Development](https://docs.lovable.dev/mobile-apps)
+- [Android Studio Guide](https://developer.android.com/studio)

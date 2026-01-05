@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,9 +9,6 @@ import PublicHeader from "@/components/PublicHeader";
 import PublicChatWidget from "@/components/PublicChatWidget";
 
 const PublicHome = () => {
-  const location = useLocation();
-  const isAppRoute = location.pathname.startsWith("/app");
-  const ubsBasePath = isAppRoute ? "/app/ubs" : "/ubs";
   const { postos, loading } = usePostos();
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -71,7 +68,7 @@ const PublicHome = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredPostos.map((posto) => (
-              <Link key={posto.id} to={`${ubsBasePath}/${posto.id}`}>
+              <Link key={posto.id} to={`/ubs/${posto.id}`}>
                 <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer border-l-4 border-l-primary">
                   <CardHeader className="pb-2">
                     <div className="flex items-start justify-between">
