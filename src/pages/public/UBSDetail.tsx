@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import PublicHeader from "@/components/PublicHeader";
 import { NotificationPreferences } from "@/components/NotificationPreferences";
+import PublicChatWidget from "@/components/PublicChatWidget";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -196,6 +197,8 @@ const UBSDetail = () => {
         {/* Notification Preferences Widget */}
         <NotificationPreferences />
       </main>
+
+      <PublicChatWidget />
     </div>
   );
 };
