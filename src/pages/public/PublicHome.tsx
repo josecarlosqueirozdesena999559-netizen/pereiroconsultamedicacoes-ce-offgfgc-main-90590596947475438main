@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Search, MapPin, Clock, Phone, Building2 } from "lucide-react";
 import { usePostos } from "@/hooks/usePostos";
 import PublicHeader from "@/components/PublicHeader";
-import PublicChatWidget from "@/components/PublicChatWidget";
+import { ChatWidget } from "@/components/ChatWidget";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { NotificationPreferences } from "@/components/NotificationPreferences";
 
@@ -205,7 +205,7 @@ const PublicHome = () => {
         </div>
       </section>
 
-      <PublicChatWidget />
+      <ChatWidget />
     </div>
   );
 };
