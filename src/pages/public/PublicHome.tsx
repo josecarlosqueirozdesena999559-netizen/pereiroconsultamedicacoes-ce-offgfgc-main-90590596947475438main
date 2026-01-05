@@ -8,7 +8,7 @@ import { usePostos } from "@/hooks/usePostos";
 import PublicHeader from "@/components/PublicHeader";
 import { ChatWidget } from "@/components/ChatWidget";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { NotificationPreferences } from "@/components/NotificationPreferences";
+
 
 const PublicHome = () => {
   const { postos, loading } = usePostos();
@@ -138,14 +138,6 @@ const PublicHome = () => {
         </div>
       </section>
 
-      {/* Notification Preferences Section */}
-      <section className="py-6 sm:py-8 md:py-12 bg-gradient-to-b from-secondary/20 to-background">
-        <div className="container mx-auto px-4">
-          <div className="max-w-2xl mx-auto">
-            <NotificationPreferences />
-          </div>
-        </div>
-      </section>
 
       {/* Info Section */}
       <section className="py-6 sm:py-8 md:py-12 bg-card">
