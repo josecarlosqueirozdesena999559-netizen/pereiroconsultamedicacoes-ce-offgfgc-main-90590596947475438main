@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, Link, useLocation } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -48,9 +48,6 @@ interface Medicamento {
 
 const UBSDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const location = useLocation();
-  const isAppRoute = location.pathname.startsWith("/app");
-  const basePath = isAppRoute ? "/app" : "/";
   
   const [posto, setPosto] = useState<Posto | null>(null);
   const [arquivo, setArquivo] = useState<ArquivoPDF | null>(null);
@@ -133,7 +130,7 @@ const UBSDetail = () => {
           <p className="text-muted-foreground mb-4">
             A unidade de saúde solicitada não existe ou foi removida.
           </p>
-          <Link to={basePath}>
+          <Link to="/">
             <Button>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Voltar para lista
