@@ -20,6 +20,8 @@ const ChatWidget = React.lazy(() => import("./components/ChatWidget").then(m => 
 // Public app pages - carregados apenas no subdomínio app.
 const PublicHome = React.lazy(() => import("./pages/public/PublicHome"));
 const UBSDetail = React.lazy(() => import("./pages/public/UBSDetail"));
+const TermosDeUso = React.lazy(() => import("./pages/public/TermosDeUso"));
+const PoliticaPrivacidade = React.lazy(() => import("./pages/public/PoliticaPrivacidade"));
 
 /**
  * Detecta se estamos no subdomínio do app público (app.consultmedpereiro.com)
@@ -47,6 +49,8 @@ const PublicApp = () => (
           <Routes>
             <Route path="/" element={<PublicHome />} />
             <Route path="/ubs/:id" element={<UBSDetail />} />
+            <Route path="/termos-de-uso" element={<TermosDeUso />} />
+            <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
             <Route path="*" element={<PublicHome />} />
           </Routes>
         </React.Suspense>

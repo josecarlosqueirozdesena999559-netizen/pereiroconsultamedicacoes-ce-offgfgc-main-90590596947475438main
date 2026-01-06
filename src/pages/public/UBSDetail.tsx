@@ -16,6 +16,7 @@ import {
   Loader2
 } from "lucide-react";
 import PublicHeader from "@/components/PublicHeader";
+import Footer from "@/components/Footer";
 import { NotificationPreferences } from "@/components/NotificationPreferences";
 import { ChatWidget } from "@/components/ChatWidget";
 import { format } from "date-fns";
@@ -113,10 +114,10 @@ const UBSDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen flex flex-col bg-background">
       <PublicHeader showBack />
       
-      <main className="container mx-auto px-4 py-6">
+      <main className="flex-1 container mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {/* UBS Info Card */}
         <Card className="mb-6 border-l-4 border-l-primary">
           <CardHeader>
@@ -199,6 +200,7 @@ const UBSDetail = () => {
         <NotificationPreferences ubsId={id} ubsNome={posto.nome} />
       </main>
 
+      <Footer />
       <ChatWidget />
     </div>
   );
