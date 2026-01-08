@@ -160,9 +160,9 @@ const UBSDetail = () => {
               Relatório de Medicamentos
             </CardTitle>
             {arquivo?.data_upload && (
-              <CardDescription className="flex items-center gap-2">
+            <CardDescription className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
-                Última atualização: {format(new Date(arquivo.data_upload), "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
+                Última atualização: {format(new Date(arquivo.data_upload), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
               </CardDescription>
             )}
           </CardHeader>
