@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import PublicHeader from "@/components/PublicHeader";
 import Footer from "@/components/Footer";
-import { NotificationPreferences } from "@/components/NotificationPreferences";
 import { ChatWidget } from "@/components/ChatWidget";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -196,8 +195,6 @@ const UBSDetail = () => {
           </CardContent>
         </Card>
 
-        {/* Notification Preferences Widget - specific to this UBS */}
-        <NotificationPreferences ubsId={id} ubsNome={posto.nome} />
       </main>
 
       <Footer />
