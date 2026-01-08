@@ -6,7 +6,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "./hooks/useAuth";
 import SplashScreen from "./components/SplashScreen";
-import { useStatusBar } from "./hooks/useStatusBar";
 
 // Lazy load para separação completa
 const Index = React.lazy(() => import("./pages/Index"));
@@ -113,10 +112,6 @@ const AdminApp = () => {
 const App = () => {
   const isPublic = isPublicAppHost();
   const [showSplash, setShowSplash] = useState(isPublic);
-  
-  // Configura a barra de status do Android
-  useStatusBar();
-  
   console.log('[ConsultMed] Host:', window.location.hostname, '| Modo:', isPublic ? 'PÚBLICO' : 'ADMIN');
 
   if (showSplash && isPublic) {
