@@ -169,8 +169,14 @@ const UBSDetail = () => {
           <CardContent>
             {arquivo ? (
               <div className="space-y-4">
-                {/* Download button */}
-                <div className="flex justify-end">
+                {/* Action buttons */}
+                <div className="flex flex-wrap gap-2 justify-center">
+                  <a href={arquivo.url} target="_blank" rel="noopener noreferrer">
+                    <Button>
+                      <FileText className="h-4 w-4 mr-2" />
+                      Visualizar PDF
+                    </Button>
+                  </a>
                   <a href={arquivo.url} download>
                     <Button variant="outline">
                       <Download className="h-4 w-4 mr-2" />
@@ -178,13 +184,6 @@ const UBSDetail = () => {
                     </Button>
                   </a>
                 </div>
-                
-                {/* PDF Embed - always visible */}
-                <iframe
-                  src={arquivo.url}
-                  className="w-full h-[70vh] min-h-[400px] rounded-lg border"
-                  title="PDF de Medicamentos"
-                />
               </div>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
