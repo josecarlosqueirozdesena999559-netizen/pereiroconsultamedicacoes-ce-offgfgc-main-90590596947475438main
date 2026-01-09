@@ -214,7 +214,7 @@ const UBSDetail = () => {
             </Button>
           </div>
           <iframe
-            src={arquivo.url}
+            src={`https://docs.google.com/viewer?url=${encodeURIComponent(arquivo.url)}&embedded=true`}
             className="flex-1 w-full bg-white"
             title="PDF de Medicamentos"
           />
