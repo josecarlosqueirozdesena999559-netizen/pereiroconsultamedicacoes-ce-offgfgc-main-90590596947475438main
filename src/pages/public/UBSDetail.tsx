@@ -13,7 +13,9 @@ import {
   Download,
   Calendar,
   Building2,
-  Loader2
+  Loader2,
+  X,
+  Eye
 } from "lucide-react";
 import PublicHeader from "@/components/PublicHeader";
 import Footer from "@/components/Footer";
@@ -43,6 +45,7 @@ const UBSDetail = () => {
   const [posto, setPosto] = useState<Posto | null>(null);
   const [arquivo, setArquivo] = useState<ArquivoPDF | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showPdfViewer, setShowPdfViewer] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -171,12 +174,10 @@ const UBSDetail = () => {
               <div className="space-y-4">
                 {/* Action buttons */}
                 <div className="flex flex-wrap gap-2 justify-center">
-                  <a href={arquivo.url} target="_blank" rel="noopener noreferrer">
-                    <Button>
-                      <FileText className="h-4 w-4 mr-2" />
-                      Visualizar PDF
-                    </Button>
-                  </a>
+                  <Button onClick={() => setShowPdfViewer(true)}>
+                    <Eye className="h-4 w-4 mr-2" />
+                    Visualizar PDF
+                  </Button>
                   <a href={arquivo.url} download>
                     <Button variant="outline">
                       <Download className="h-4 w-4 mr-2" />
@@ -195,6 +196,30 @@ const UBSDetail = () => {
         </Card>
 
       </main>
+
+      {/* PDF Viewer Modal */}
+      {showPdfViewer && arquivo && (
+        <div className="fixed inset-0 z-50 bg-black/90 flex flex-col">
+          <div className="flex items-center justify-between p-3 bg-background/95 border-b">
+            <span className="text-sm font-medium truncate flex-1">
+              {posto?.nome} - Relatório
+            </span>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setShowPdfViewer(false)}
+              className="shrink-0"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+          <iframe
+            src={arquivo.url}
+            className="flex-1 w-full bg-white"
+            title="PDF de Medicamentos"
+          />
+        </div>
+      )}
 
       <Footer />
       <ChatWidget />
