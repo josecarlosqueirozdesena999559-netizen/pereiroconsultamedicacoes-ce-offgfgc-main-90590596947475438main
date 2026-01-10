@@ -8,7 +8,7 @@ import "./index.css";
 // Configuração do StatusBar para Android/iOS (apenas em plataforma nativa)
 if (Capacitor.isNativePlatform()) {
   StatusBar.setBackgroundColor({
-    color: '#000000' // MESMA COR DO APP
+    color: '#1a5f2a' // Verde da identidade visual do app
   }).catch(() => {});
 
   StatusBar.setStyle({
