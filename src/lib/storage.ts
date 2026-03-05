@@ -272,42 +272,25 @@ export const addUser = async (user: Omit<User, 'id' | 'createdAt' | 'updatedAt'>
 
 export const updateUser = async (id: string, updates: Partial<User>): Promise<User | null> => {
   try {
-    const updateData: any = {};
-    if (updates.login) updateData.email = updates.login; // Adicionado para permitir a atualização do email
-    if (updates.nome) updateData.nome = updates.nome;
-    if (updates.senha) updateData.senha = updates.senha; // Atualizando senha em texto simples
-    if (updates.tipo) updateData.tipo = updates.tipo;
+    const { data: updatedRows, error } = await supabase.rpc('fn_atualizar_usuario', {
+      p_user_id: id,
+      p_nome: updates.nome || null,
+      p_email: updates.login || null,
+      p_senha: updates.senha || null,
+      p_tipo: updates.tipo || null
+    });
 
-    let userRow: any = null;
+    if (error) throw error;
 
-    if (Object.keys(updateData).length > 0) {
-      const { data, error } = await supabase
-        .from('usuarios')
-        .update(updateData)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      userRow = data;
-    } else {
-      const { data, error } = await supabase
-        .from('usuarios')
-        .select('*')
-        .eq('id', id)
-        .single();
-      if (error) throw error;
-      userRow = data;
-    }
+    const userRow = updatedRows && updatedRows.length > 0 ? updatedRows[0] : null;
+    if (!userRow) throw new Error('Usuário não encontrado após atualização');
 
     if (updates.ubsVinculadas) {
-      // Limpa todos os vínculos existentes para este usuário
       await supabase
         .from('usuario_posto')
         .delete()
         .eq('user_id', id);
 
-      // Insere os novos vínculos
       if (updates.ubsVinculadas.length > 0) {
         const vinculacoes = updates.ubsVinculadas.map(postoId => ({
           user_id: id,
