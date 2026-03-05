@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="HandheldFriendly" content="true">
+  <title>ConsultMed - Consulta de Medicamentos Pereiro</title>
+
+  <!-- Ícones / Favicons -->
+  <link rel="icon" href="/logo-consultmed.png" type="image/png">
+  <link rel="apple-touch-icon" href="/logo-consultmed.png">
+
+  <!-- Manifest / PWA -->
+  <link rel="manifest" href="/manifest.json">
+  
+  <!-- Status Bar Colors - Match app primary color -->
+  <meta name="theme-color" content="#0a3d0a">
+  <meta name="msapplication-navbutton-color" content="#0a3d0a">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <!-- SEO -->
+  <meta name="description" content="Sistema de consulta de medicamentos disponíveis nas UBS de Pereiro - Prefeitura Municipal" />
+  <meta name="author" content="Prefeitura Municipal de Pereiro" />
+  <meta name="keywords" content="UBS, medicamentos, Pereiro, saúde pública, medicações" />
+
+  <!-- PWA Meta Tags -->
+  <meta name="application-name" content="ConsultMed">
+  <meta name="apple-mobile-web-app-title" content="ConsultMed">
+  <meta name="msapplication-TileColor" content="#0a3d0a">
+  <meta name="msapplication-tap-highlight" content="no">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Sistema de consulta de Medicamentos de Pereiro-CE" />
+  <meta property="og:description" content="Consulte os medicamentos disponíveis nas Unidades Básicas de Saúde de Pereiro" />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="/logo-512.png" />
+</head>
+
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+              console.log('SW registered: ', registration);
+            })
+            .catch((registrationError) => {
+              console.log('SW registration failed: ', registrationError);
+            });
+        });
+      }
+    </script>
+  </body>
+</html>

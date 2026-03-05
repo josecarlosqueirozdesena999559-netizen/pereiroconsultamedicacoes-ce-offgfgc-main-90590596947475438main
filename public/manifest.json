@@ -1,0 +1,26 @@
+{
+  "name": "ConsultMed - Consulta de Medicamentos",
+  "short_name": "ConsultMed",
+  "description": "Sistema de consulta de medicamentos disponíveis nas UBS de Pereiro",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f2e0f",
+  "theme_color": "#0f2e0f",
+  "orientation": "portrait-primary",
+  "categories": ["health", "medical", "government"],
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "/logo-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
