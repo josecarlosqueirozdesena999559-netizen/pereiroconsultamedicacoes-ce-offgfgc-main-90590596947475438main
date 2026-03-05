@@ -312,10 +312,9 @@ export const updateUser = async (id: string, updates: Partial<User>): Promise<Us
 
 export const deleteUser = async (id: string): Promise<boolean> => {
   try {
-    const { error } = await supabase
-      .from('usuarios')
-      .delete()
-      .eq('id', id);
+    const { error } = await supabase.rpc('fn_deletar_usuario', {
+      p_user_id: id
+    });
 
     return !error;
   } catch (error) {
