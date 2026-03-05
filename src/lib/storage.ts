@@ -66,9 +66,7 @@ export const getUBS = async (): Promise<UBS[]> => {
       .select('*');
     if (pdfError) console.error('Erro ao buscar PDFs:', pdfError);
 
-    const { data: usuarios, error: usuariosError } = await supabase
-      .from('usuarios')
-      .select('*');
+    const { data: usuarios, error: usuariosError } = await supabase.rpc('fn_get_users');
     if (usuariosError) console.error('Erro ao buscar usuários:', usuariosError);
 
     const { data: vinculacoes, error: vinculacoesError } = await supabase
@@ -188,9 +186,7 @@ export const deleteUBS = async (id: string): Promise<boolean> => {
 // Users operations
 export const getUsers = async (): Promise<User[]> => {
   try {
-    const { data: usuarios, error } = await supabase
-      .from('usuarios')
-      .select('*');
+    const { data: usuarios, error } = await supabase.rpc('fn_get_users');
 
     if (error) throw error;
 
@@ -198,7 +194,7 @@ export const getUsers = async (): Promise<User[]> => {
       .from('usuario_posto')
       .select('*');
 
-    return (usuarios || []).map(usuario => {
+    return (usuarios || []).map((usuario: any) => {
       const userVinculacoes = vinculacoes?.filter(v => v.user_id === usuario.id) || [];
       return transformUsuarioToUser(usuario, userVinculacoes);
     });
@@ -210,15 +206,15 @@ export const getUsers = async (): Promise<User[]> => {
 
 export const getUserById = async (userId: string): Promise<User | null> => {
   try {
-    const { data: fullUser, error: userError } = await supabase
-      .from('usuarios')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle(); 
+    const { data, error: userError } = await supabase.rpc('fn_get_user_by_id', {
+      p_user_id: userId
+    });
 
-    if (userError || !fullUser) {
+    if (userError || !data || data.length === 0) {
       return null;
     }
+    
+    const fullUser = data[0];
     
     const { data: vinculacoes } = await supabase
       .from('usuario_posto')
@@ -234,23 +230,18 @@ export const getUserById = async (userId: string): Promise<User | null> => {
 
 export const addUser = async (user: Omit<User, 'id' | 'createdAt' | 'updatedAt'>): Promise<User> => {
   try {
-    // Inserindo senha em texto simples
-    const { data, error } = await supabase
-      .from('usuarios')
-      .insert({
-        email: user.login,
-        senha: user.senha, 
-        nome: user.nome,
-        tipo: user.tipo
-      })
-      .select()
-      .single();
+    const { data: newUserId, error } = await supabase.rpc('fn_criar_usuario', {
+      p_nome: user.nome,
+      p_email: user.login,
+      p_senha: user.senha,
+      p_tipo: user.tipo
+    });
 
     if (error) throw error;
 
     if (user.ubsVinculadas.length > 0) {
       const vinculacoes = user.ubsVinculadas.map(postoId => ({
-        user_id: data.id,
+        user_id: newUserId,
         posto_id: postoId
       }));
 
@@ -259,7 +250,18 @@ export const addUser = async (user: Omit<User, 'id' | 'createdAt' | 'updatedAt'>
         .insert(vinculacoes);
     }
 
-    return transformUsuarioToUser(data, user.ubsVinculadas.map(id => ({ posto_id: id })));
+    const createdUser: User = {
+      id: newUserId,
+      login: user.login,
+      nome: user.nome,
+      senha: '',
+      tipo: user.tipo,
+      ubsVinculadas: user.ubsVinculadas,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    return createdUser;
   } catch (error) {
     console.error('Erro ao criar usuário:', error);
     throw error;
@@ -268,42 +270,25 @@ export const addUser = async (user: Omit<User, 'id' | 'createdAt' | 'updatedAt'>
 
 export const updateUser = async (id: string, updates: Partial<User>): Promise<User | null> => {
   try {
-    const updateData: any = {};
-    if (updates.login) updateData.email = updates.login; // Adicionado para permitir a atualização do email
-    if (updates.nome) updateData.nome = updates.nome;
-    if (updates.senha) updateData.senha = updates.senha; // Atualizando senha em texto simples
-    if (updates.tipo) updateData.tipo = updates.tipo;
+    const { data: updatedRows, error } = await supabase.rpc('fn_atualizar_usuario', {
+      p_user_id: id,
+      p_nome: updates.nome || null,
+      p_email: updates.login || null,
+      p_senha: updates.senha || null,
+      p_tipo: updates.tipo || null
+    });
 
-    let userRow: any = null;
+    if (error) throw error;
 
-    if (Object.keys(updateData).length > 0) {
-      const { data, error } = await supabase
-        .from('usuarios')
-        .update(updateData)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      userRow = data;
-    } else {
-      const { data, error } = await supabase
-        .from('usuarios')
-        .select('*')
-        .eq('id', id)
-        .single();
-      if (error) throw error;
-      userRow = data;
-    }
+    const userRow = updatedRows && updatedRows.length > 0 ? updatedRows[0] : null;
+    if (!userRow) throw new Error('Usuário não encontrado após atualização');
 
     if (updates.ubsVinculadas) {
-      // Limpa todos os vínculos existentes para este usuário
       await supabase
         .from('usuario_posto')
         .delete()
         .eq('user_id', id);
 
-      // Insere os novos vínculos
       if (updates.ubsVinculadas.length > 0) {
         const vinculacoes = updates.ubsVinculadas.map(postoId => ({
           user_id: id,
@@ -325,10 +310,9 @@ export const updateUser = async (id: string, updates: Partial<User>): Promise<Us
 
 export const deleteUser = async (id: string): Promise<boolean> => {
   try {
-    const { error } = await supabase
-      .from('usuarios')
-      .delete()
-      .eq('id', id);
+    const { error } = await supabase.rpc('fn_deletar_usuario', {
+      p_user_id: id
+    });
 
     return !error;
   } catch (error) {

@@ -796,6 +796,23 @@ export type Database = {
         Args: { p_nova_senha: string; p_senha_atual: string; p_user_id: string }
         Returns: boolean
       }
+      fn_atualizar_usuario: {
+        Args: {
+          p_email?: string
+          p_nome?: string
+          p_senha?: string
+          p_tipo?: Database["public"]["Enums"]["user_role"]
+          p_user_id: string
+        }
+        Returns: {
+          criado_em: string
+          email: string
+          id: string
+          nome: string
+          senha: string
+          tipo: string
+        }[]
+      }
       fn_criar_usuario: {
         Args: {
           p_email: string
