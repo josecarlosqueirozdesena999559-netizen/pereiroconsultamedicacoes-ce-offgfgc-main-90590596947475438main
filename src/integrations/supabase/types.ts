@@ -43,6 +43,39 @@ export type Database = {
           },
         ]
       }
+      audit_log: {
+        Row: {
+          created_at: string
+          detalhes: Json | null
+          id: string
+          ip_address: string | null
+          operacao: string
+          registro_id: string | null
+          tabela: string
+          usuario_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          detalhes?: Json | null
+          id?: string
+          ip_address?: string | null
+          operacao: string
+          registro_id?: string | null
+          tabela: string
+          usuario_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          detalhes?: Json | null
+          id?: string
+          ip_address?: string | null
+          operacao?: string
+          registro_id?: string | null
+          tabela?: string
+          usuario_id?: string | null
+        }
+        Relationships: []
+      }
       avaliacoes: {
         Row: {
           comentario: string | null
@@ -66,6 +99,69 @@ export type Database = {
           rating?: number
         }
         Relationships: []
+      }
+      colaboradores: {
+        Row: {
+          cpf: string
+          created_at: string
+          email: string | null
+          face_registrada: boolean
+          foto_longe: string | null
+          foto_perto: string | null
+          funcao: string
+          id: string
+          is_responsavel: boolean
+          nome: string
+          posto_id: string
+          setor: string
+          usuario_id: string | null
+        }
+        Insert: {
+          cpf: string
+          created_at?: string
+          email?: string | null
+          face_registrada?: boolean
+          foto_longe?: string | null
+          foto_perto?: string | null
+          funcao: string
+          id?: string
+          is_responsavel?: boolean
+          nome: string
+          posto_id: string
+          setor: string
+          usuario_id?: string | null
+        }
+        Update: {
+          cpf?: string
+          created_at?: string
+          email?: string | null
+          face_registrada?: boolean
+          foto_longe?: string | null
+          foto_perto?: string | null
+          funcao?: string
+          id?: string
+          is_responsavel?: boolean
+          nome?: string
+          posto_id?: string
+          setor?: string
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "colaboradores_posto_id_fkey"
+            columns: ["posto_id"]
+            isOneToOne: false
+            referencedRelation: "postos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "colaboradores_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       config_sistema: {
         Row: {
@@ -133,6 +229,24 @@ export type Database = {
           },
         ]
       }
+      device_tokens: {
+        Row: {
+          created_at: string | null
+          id: number
+          token: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: never
+          token: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: never
+          token?: string
+        }
+        Relationships: []
+      }
       entregas_medicamento: {
         Row: {
           data_entrega: string
@@ -174,6 +288,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      lgpd_consentimentos: {
+        Row: {
+          aceito: boolean
+          aceito_em: string | null
+          created_at: string
+          id: string
+          ip_address: string | null
+          revogado_em: string | null
+          tipo_consentimento: string
+          usuario_id: string
+        }
+        Insert: {
+          aceito?: boolean
+          aceito_em?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          revogado_em?: string | null
+          tipo_consentimento: string
+          usuario_id: string
+        }
+        Update: {
+          aceito?: boolean
+          aceito_em?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          revogado_em?: string | null
+          tipo_consentimento?: string
+          usuario_id?: string
+        }
+        Relationships: []
       }
       lotes_medicamento: {
         Row: {
@@ -451,6 +598,84 @@ export type Database = {
         }
         Relationships: []
       }
+      registros_ponto: {
+        Row: {
+          aprovado: boolean | null
+          aprovado_em: string | null
+          aprovado_por: string | null
+          colaborador_id: string
+          created_at: string
+          data: string
+          foto_entrada_manha: string | null
+          foto_entrada_tarde: string | null
+          foto_saida_manha: string | null
+          foto_saida_tarde: string | null
+          hora_entrada_manha: string | null
+          hora_entrada_tarde: string | null
+          hora_saida_manha: string | null
+          hora_saida_tarde: string | null
+          id: string
+          motivo_rejeicao: string | null
+          posto_id: string
+          status: string
+        }
+        Insert: {
+          aprovado?: boolean | null
+          aprovado_em?: string | null
+          aprovado_por?: string | null
+          colaborador_id: string
+          created_at?: string
+          data?: string
+          foto_entrada_manha?: string | null
+          foto_entrada_tarde?: string | null
+          foto_saida_manha?: string | null
+          foto_saida_tarde?: string | null
+          hora_entrada_manha?: string | null
+          hora_entrada_tarde?: string | null
+          hora_saida_manha?: string | null
+          hora_saida_tarde?: string | null
+          id?: string
+          motivo_rejeicao?: string | null
+          posto_id: string
+          status?: string
+        }
+        Update: {
+          aprovado?: boolean | null
+          aprovado_em?: string | null
+          aprovado_por?: string | null
+          colaborador_id?: string
+          created_at?: string
+          data?: string
+          foto_entrada_manha?: string | null
+          foto_entrada_tarde?: string | null
+          foto_saida_manha?: string | null
+          foto_saida_tarde?: string | null
+          hora_entrada_manha?: string | null
+          hora_entrada_tarde?: string | null
+          hora_saida_manha?: string | null
+          hora_saida_tarde?: string | null
+          id?: string
+          motivo_rejeicao?: string | null
+          posto_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registros_ponto_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registros_ponto_posto_id_fkey"
+            columns: ["posto_id"]
+            isOneToOne: false
+            referencedRelation: "postos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       update_checks: {
         Row: {
           created_at: string | null
@@ -558,7 +783,51 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      anonimizar_colaborador: {
+        Args: { p_colaborador_id: string }
+        Returns: undefined
+      }
       cleanup_old_update_checks: { Args: never; Returns: undefined }
+      exportar_dados_colaborador: {
+        Args: { p_colaborador_id: string }
+        Returns: Json
+      }
+      fn_alterar_senha: {
+        Args: { p_nova_senha: string; p_senha_atual: string; p_user_id: string }
+        Returns: boolean
+      }
+      fn_criar_usuario: {
+        Args: {
+          p_email: string
+          p_nome: string
+          p_senha: string
+          p_tipo?: Database["public"]["Enums"]["user_role"]
+        }
+        Returns: string
+      }
+      fn_deletar_usuario: { Args: { p_user_id: string }; Returns: undefined }
+      fn_get_user_by_id: {
+        Args: { p_user_id: string }
+        Returns: {
+          criado_em: string
+          email: string
+          id: string
+          nome: string
+          senha: string
+          tipo: string
+        }[]
+      }
+      fn_get_users: {
+        Args: never
+        Returns: {
+          criado_em: string
+          email: string
+          id: string
+          nome: string
+          senha: string
+          tipo: string
+        }[]
+      }
       fn_login: {
         Args: { p_email: string; p_senha: string }
         Returns: {
@@ -570,7 +839,7 @@ export type Database = {
       }
     }
     Enums: {
-      user_role: "admin" | "responsavel"
+      user_role: "admin" | "responsavel" | "colaborador"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -698,7 +967,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      user_role: ["admin", "responsavel"],
+      user_role: ["admin", "responsavel", "colaborador"],
     },
   },
 } as const
