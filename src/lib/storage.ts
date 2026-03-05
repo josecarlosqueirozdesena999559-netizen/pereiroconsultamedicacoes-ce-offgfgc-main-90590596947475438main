@@ -188,9 +188,7 @@ export const deleteUBS = async (id: string): Promise<boolean> => {
 // Users operations
 export const getUsers = async (): Promise<User[]> => {
   try {
-    const { data: usuarios, error } = await supabase
-      .from('usuarios')
-      .select('*');
+    const { data: usuarios, error } = await supabase.rpc('fn_get_users');
 
     if (error) throw error;
 
@@ -198,7 +196,7 @@ export const getUsers = async (): Promise<User[]> => {
       .from('usuario_posto')
       .select('*');
 
-    return (usuarios || []).map(usuario => {
+    return (usuarios || []).map((usuario: any) => {
       const userVinculacoes = vinculacoes?.filter(v => v.user_id === usuario.id) || [];
       return transformUsuarioToUser(usuario, userVinculacoes);
     });
