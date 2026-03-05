@@ -208,15 +208,15 @@ export const getUsers = async (): Promise<User[]> => {
 
 export const getUserById = async (userId: string): Promise<User | null> => {
   try {
-    const { data: fullUser, error: userError } = await supabase
-      .from('usuarios')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle(); 
+    const { data, error: userError } = await supabase.rpc('fn_get_user_by_id', {
+      p_user_id: userId
+    });
 
-    if (userError || !fullUser) {
+    if (userError || !data || data.length === 0) {
       return null;
     }
+    
+    const fullUser = data[0];
     
     const { data: vinculacoes } = await supabase
       .from('usuario_posto')
