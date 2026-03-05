@@ -66,9 +66,7 @@ export const getUBS = async (): Promise<UBS[]> => {
       .select('*');
     if (pdfError) console.error('Erro ao buscar PDFs:', pdfError);
 
-    const { data: usuarios, error: usuariosError } = await supabase
-      .from('usuarios')
-      .select('*');
+    const { data: usuarios, error: usuariosError } = await supabase.rpc('fn_get_users');
     if (usuariosError) console.error('Erro ao buscar usuários:', usuariosError);
 
     const { data: vinculacoes, error: vinculacoesError } = await supabase
