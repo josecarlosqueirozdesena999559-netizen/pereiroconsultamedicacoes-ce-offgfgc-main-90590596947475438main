@@ -232,23 +232,18 @@ export const getUserById = async (userId: string): Promise<User | null> => {
 
 export const addUser = async (user: Omit<User, 'id' | 'createdAt' | 'updatedAt'>): Promise<User> => {
   try {
-    // Inserindo senha em texto simples
-    const { data, error } = await supabase
-      .from('usuarios')
-      .insert({
-        email: user.login,
-        senha: user.senha, 
-        nome: user.nome,
-        tipo: user.tipo
-      })
-      .select()
-      .single();
+    const { data: newUserId, error } = await supabase.rpc('fn_criar_usuario', {
+      p_nome: user.nome,
+      p_email: user.login,
+      p_senha: user.senha,
+      p_tipo: user.tipo
+    });
 
     if (error) throw error;
 
     if (user.ubsVinculadas.length > 0) {
       const vinculacoes = user.ubsVinculadas.map(postoId => ({
-        user_id: data.id,
+        user_id: newUserId,
         posto_id: postoId
       }));
 
@@ -257,7 +252,18 @@ export const addUser = async (user: Omit<User, 'id' | 'createdAt' | 'updatedAt'>
         .insert(vinculacoes);
     }
 
-    return transformUsuarioToUser(data, user.ubsVinculadas.map(id => ({ posto_id: id })));
+    const createdUser: User = {
+      id: newUserId,
+      login: user.login,
+      nome: user.nome,
+      senha: '',
+      tipo: user.tipo,
+      ubsVinculadas: user.ubsVinculadas,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    return createdUser;
   } catch (error) {
     console.error('Erro ao criar usuário:', error);
     throw error;
