@@ -59,18 +59,6 @@ const PublicApp = () => (
   </QueryClientProvider>
 );
 
-// Wrapper para ocultar ChatWidget no Dashboard (apenas admin)
-const ChatWidgetWrapper = () => {
-  const location = useLocation();
-  const isDashboard = location.pathname === '/dashboard';
-  
-  if (isDashboard) return null;
-  return (
-    <React.Suspense fallback={null}>
-      <ChatWidget />
-    </React.Suspense>
-  );
-};
 
 /**
  * APP ADMIN - Site com login
