@@ -9,10 +9,10 @@ import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Loader2, Home } from 'lucide-react';
 
 const Login = () => {
-  const [login, setLogin] = useState('');
+  const [login, setLogin] = useState(() => localStorage.getItem('remembered-email') || '');
   const [senha, setSenha] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+  const [rememberMe, setRememberMe] = useState(() => !!localStorage.getItem('remembered-email'));
   const [isLoading, setIsLoading] = useState(false);
   const { login: authLogin, isAuthenticated } = useAuth();
   const { toast } = useToast();
@@ -29,6 +29,11 @@ const Login = () => {
     try {
       const success = await authLogin(login, senha);
       if (success) {
+        if (rememberMe) {
+          localStorage.setItem('remembered-email', login);
+        } else {
+          localStorage.removeItem('remembered-email');
+        }
         toast({
           title: "Login realizado com sucesso!",
           description: "Redirecionando para o dashboard...",
