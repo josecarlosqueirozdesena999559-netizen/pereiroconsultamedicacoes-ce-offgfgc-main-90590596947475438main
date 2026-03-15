@@ -83,7 +83,6 @@ const AdminApp = () => {
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <PWAInstallPrompt />
-              <ChatWidgetWrapper />
             </React.Suspense>
           </BrowserRouter>
         </AuthProvider>
