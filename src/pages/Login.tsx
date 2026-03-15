@@ -29,6 +29,11 @@ const Login = () => {
     try {
       const success = await authLogin(login, senha);
       if (success) {
+        if (rememberMe) {
+          localStorage.setItem('remembered-email', login);
+        } else {
+          localStorage.removeItem('remembered-email');
+        }
         toast({
           title: "Login realizado com sucesso!",
           description: "Redirecionando para o dashboard...",
