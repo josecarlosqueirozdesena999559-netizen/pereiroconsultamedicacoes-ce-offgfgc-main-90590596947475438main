@@ -15,7 +15,7 @@ const MedicacoesAutoCusto = React.lazy(() => import("./pages/MedicacoesAutoCusto
 const ConsultaSUS = React.lazy(() => import("./pages/ConsultaSUS"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
 const PWAInstallPrompt = React.lazy(() => import("./components/PWAInstallPrompt"));
-const ChatWidget = React.lazy(() => import("./components/ChatWidget").then(m => ({ default: m.ChatWidget })));
+
 
 // Public app pages - carregados apenas no subdomínio app.
 const PublicHome = React.lazy(() => import("./pages/public/PublicHome"));
@@ -59,18 +59,6 @@ const PublicApp = () => (
   </QueryClientProvider>
 );
 
-// Wrapper para ocultar ChatWidget no Dashboard (apenas admin)
-const ChatWidgetWrapper = () => {
-  const location = useLocation();
-  const isDashboard = location.pathname === '/dashboard';
-  
-  if (isDashboard) return null;
-  return (
-    <React.Suspense fallback={null}>
-      <ChatWidget />
-    </React.Suspense>
-  );
-};
 
 /**
  * APP ADMIN - Site com login
@@ -95,7 +83,6 @@ const AdminApp = () => {
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <PWAInstallPrompt />
-              <ChatWidgetWrapper />
             </React.Suspense>
           </BrowserRouter>
         </AuthProvider>
