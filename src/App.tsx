@@ -98,13 +98,8 @@ const AdminApp = () => {
  */
 const App = () => {
   const isPublic = isPublicAppHost();
-  const [showSplash, setShowSplash] = useState(isPublic);
   console.log('[ConsultMed] Host:', window.location.hostname, '| Modo:', isPublic ? 'PÚBLICO' : 'ADMIN');
 
-  if (showSplash && isPublic) {
-    return <SplashScreen onFinish={() => setShowSplash(false)} />;
-  }
-  
   if (isPublic) {
     return <PublicApp />;
   }
