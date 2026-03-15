@@ -1,17 +1,18 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { Mail, Lock, LogIn, Loader2 } from 'lucide-react';
-import Header from '@/components/Header';
+import { Eye, EyeOff, Loader2, Home } from 'lucide-react';
 
 const Login = () => {
   const [login, setLogin] = useState('');
   const [senha, setSenha] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { login: authLogin, isAuthenticated } = useAuth();
   const { toast } = useToast();
@@ -52,70 +53,115 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
-      <Header />
-      <div className="container mx-auto px-3 sm:px-4 py-8 sm:py-12 flex justify-center">
-        <Card className="w-full max-w-md bg-card shadow-xl rounded-xl border-border/50">
-          <CardHeader className="text-center space-y-3 pt-8">
-            <div className="flex justify-center">
-              <div className="h-14 w-14 rounded-xl bg-primary flex items-center justify-center shadow-md">
-                <LogIn className="h-7 w-7 text-primary-foreground" strokeWidth={1.8} />
+    <div className="min-h-screen flex flex-col">
+      {/* Botão Início */}
+      <div className="absolute top-4 left-4 z-10">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navigate('/')}
+          className="bg-card/90 backdrop-blur-sm border-border hover:bg-card text-foreground gap-1.5 shadow-md"
+        >
+          <Home className="h-4 w-4" />
+          Início
+        </Button>
+      </div>
+
+      <div className="flex-1 flex flex-col lg:flex-row">
+        {/* Lado esquerdo - Info */}
+        <div
+          className="lg:flex-1 flex items-center justify-center p-8 sm:p-12 lg:p-16"
+          style={{ background: 'var(--gradient-hero)' }}
+        >
+          <div className="max-w-md text-primary-foreground">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-6">
+              Acesso Restrito
+            </h1>
+            <p className="text-base sm:text-lg font-semibold opacity-95 mb-3">
+              Sistema de gerenciamento das Unidades Básicas de Saúde.
+            </p>
+            <p className="text-sm sm:text-base opacity-80 leading-relaxed">
+              Acesso exclusivo para profissionais autorizados pela Secretaria Municipal de Saúde.
+            </p>
+          </div>
+        </div>
+
+        {/* Lado direito - Formulário */}
+        <div className="lg:flex-1 flex items-center justify-center p-6 sm:p-8 lg:p-12 bg-background">
+          <div className="w-full max-w-md">
+            <div className="bg-card rounded-2xl shadow-xl border border-border/50 p-6 sm:p-8">
+              <div className="text-center mb-6">
+                <h2 className="text-xl sm:text-2xl font-bold text-foreground">Entrar no Sistema</h2>
+                <p className="text-sm text-muted-foreground mt-1">Acesse sua conta para continuar</p>
               </div>
-            </div>
-            <CardTitle className="text-2xl font-bold text-foreground">Acesso Restrito</CardTitle>
-            <CardDescription className="text-sm text-muted-foreground">
-              Sistema de gerenciamento das Unidades Básicas de Saúde
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-6 pt-2">
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="login" className="text-sm font-medium">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
+
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="login" className="text-sm font-medium text-foreground">Email</Label>
                   <Input
                     id="login"
                     type="email"
                     value={login}
                     onChange={(e) => setLogin(e.target.value)}
-                    placeholder="Digite seu email"
-                    className="pl-10 h-11"
+                    placeholder="seu@email.com"
+                    className="h-11 bg-background border-input"
                     required
                   />
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="senha" className="text-sm font-medium">Senha</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                  <Input
-                    id="senha"
-                    type="password"
-                    value={senha}
-                    onChange={(e) => setSenha(e.target.value)}
-                    placeholder="Digite sua senha"
-                    className="pl-10 h-11"
-                    required
-                  />
+
+                <div className="space-y-2">
+                  <Label htmlFor="senha" className="text-sm font-medium text-foreground">Senha</Label>
+                  <div className="relative">
+                    <Input
+                      id="senha"
+                      type={showPassword ? 'text' : 'password'}
+                      value={senha}
+                      onChange={(e) => setSenha(e.target.value)}
+                      placeholder="••••••••"
+                      className="h-11 pr-10 bg-background border-input"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
-              </div>
-              <Button
-                type="submit"
-                className="w-full h-11 text-sm font-semibold gap-2"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Entrando...
-                  </>
-                ) : (
-                  'Entrar'
-                )}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="remember"
+                      checked={rememberMe}
+                      onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                    />
+                    <Label htmlFor="remember" className="text-sm text-muted-foreground cursor-pointer">
+                      Lembrar login
+                    </Label>
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full h-11 text-sm font-semibold gap-2"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Entrando...
+                    </>
+                  ) : (
+                    'Entrar'
+                  )}
+                </Button>
+              </form>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
