@@ -15,7 +15,7 @@ const MedicacoesAutoCusto = React.lazy(() => import("./pages/MedicacoesAutoCusto
 const ConsultaSUS = React.lazy(() => import("./pages/ConsultaSUS"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
 const PWAInstallPrompt = React.lazy(() => import("./components/PWAInstallPrompt"));
-const ChatWidget = React.lazy(() => import("./components/ChatWidget").then(m => ({ default: m.ChatWidget })));
+
 
 // Public app pages - carregados apenas no subdomínio app.
 const PublicHome = React.lazy(() => import("./pages/public/PublicHome"));
