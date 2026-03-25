@@ -1,17 +1,17 @@
 // Cache versão 2 - forçar atualização
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const CACHE_NAME = `ubs-pereiro-cache-${CACHE_VERSION}`;
 const STATIC_CACHE = `ubs-pereiro-static-${CACHE_VERSION}`;
 
 // Instalando o service worker
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing service worker v2...');
+  console.log('[SW] Installing service worker v3...');
   self.skipWaiting(); // Força ativação imediata do SW novo
 });
 
 // Ativando o service worker e limpando TODOS os caches antigos
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating service worker v2...');
+  console.log('[SW] Activating service worker v3...');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
@@ -24,7 +24,7 @@ self.addEventListener('activate', (event) => {
         })
       );
     }).then(() => {
-      console.log('[SW] Service worker v2 activated - all old caches cleared');
+      console.log('[SW] Service worker v3 activated - all old caches cleared');
       return self.clients.claim(); // assume controle imediato
     })
   );
