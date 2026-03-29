@@ -1,13 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { MessageCircle, X } from 'lucide-react';
-
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { MessageCircle, X } from 'lucide-react';
 
 const WHATSAPP_NUMBER = '5588997027556';
-const WHATSAPP_MESSAGE = encodeURIComponent(
-  'Oi',
-);
+const WHATSAPP_MESSAGE = encodeURIComponent('Olá! Gostaria de consultar medicamentos pelo WhatsApp.');
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}`;
 
 const PWAInstallPrompt: React.FC = () => {
@@ -40,36 +37,38 @@ const PWAInstallPrompt: React.FC = () => {
 
   return (
     <div className="fixed bottom-4 left-4 right-4 z-50 animate-in slide-in-from-bottom-4">
-      <Card className="mx-auto max-w-sm overflow-hidden border border-green-200/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(240,253,244,0.98))] p-4 shadow-[0_18px_45px_rgba(34,197,94,0.18)] backdrop-blur-sm">
+      <Card className="p-3 shadow-lg border border-primary/20 bg-card/95 backdrop-blur-sm max-w-sm mx-auto">
         <div className="flex items-start gap-3">
-          <div className="mt-0.5 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-green-100 text-green-700 shadow-sm ring-4 ring-green-100/80">
-            <MessageCircle className="h-5 w-5" />
+          <div className="p-2 rounded-full bg-primary/10 flex-shrink-0">
+            <MessageCircle className="h-4 w-4 text-primary" />
           </div>
 
-          <div className="min-w-0 flex-1">
-            <div className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-green-700">
-              Atendimento online
-            </div>
-            <h3 className="mt-2 text-sm font-semibold text-foreground">Fale com a Consult Med</h3>
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-              Tire duvidas, receba orientacao e continue seu atendimento direto pelo WhatsApp.
+          <div className="flex-1 min-w-0">
+            <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
+              Atendimento Online
+            </span>
+            <h3 className="font-semibold text-base text-foreground mt-3">
+              Fale com a Consult Med
+            </h3>
+            <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+              Consulte medicamentos direto pelo WhatsApp. Clique aqui e receba atendimento.
             </p>
-            <p className="mt-2 text-xs font-medium text-green-700">(88) 99702-7556</p>
+            <p className="text-sm font-medium text-primary mt-3">(88) 99702-7556</p>
 
-            <div className="mt-3 flex gap-2">
+            <div className="flex items-center gap-3 mt-4">
               <Button
                 onClick={handleOpenWhatsApp}
                 size="sm"
-                className="h-9 gap-1.5 rounded-full bg-green-600 px-4 text-xs text-white hover:bg-green-700"
+                className="text-xs h-8 px-3 bg-primary hover:bg-primary/90"
               >
-                <MessageCircle className="h-3 w-3" />
+                <MessageCircle className="h-4 w-4 mr-2" />
                 Chamar no WhatsApp
               </Button>
               <Button
                 onClick={handleDismiss}
                 variant="ghost"
                 size="sm"
-                className="h-9 rounded-full px-3 text-xs text-muted-foreground hover:text-foreground"
+                className="text-xs h-8 px-2 text-muted-foreground hover:text-foreground"
               >
                 Fechar
               </Button>
@@ -80,10 +79,10 @@ const PWAInstallPrompt: React.FC = () => {
             onClick={handleDismiss}
             variant="ghost"
             size="sm"
-            className="h-auto flex-shrink-0 p-1 text-muted-foreground hover:text-foreground"
+            className="p-1 h-auto flex-shrink-0 text-muted-foreground hover:text-foreground"
             aria-label="Fechar aviso"
           >
-            <X className="h-3 w-3" />
+            <X className="h-4 w-4" />
           </Button>
         </div>
       </Card>
