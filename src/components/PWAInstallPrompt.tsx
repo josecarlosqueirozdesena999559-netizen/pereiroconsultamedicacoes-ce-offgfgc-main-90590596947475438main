@@ -45,13 +45,13 @@ const PWAInstallPrompt: React.FC = () => {
 
           <div className="flex-1 min-w-0">
             <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
-              Atendimento Online
+              WhatsApp
             </span>
             <h3 className="font-semibold text-base text-foreground mt-3">
-              Fale com a Consult Med
+              Fale com a ConsultMed
             </h3>
             <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-              Consulte medicamentos direto pelo WhatsApp. Clique aqui e receba atendimento.
+              Consulte medicamentos direto pelo WhatsApp. Clique no botão abaixo e fale com a ConsultMed.
             </p>
             <p className="text-sm font-medium text-primary mt-3">(88) 99702-7556</p>
 
