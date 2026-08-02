@@ -445,25 +445,17 @@ export const clearAuth = (): void => {
 // PDF operations
 export const savePDF = async (ubsId: string, file: File): Promise<string> => {
   try {
-    const fileName = `${ubsId}/${Date.now()}-${file.name}`;
+    // Não usa o nome original: espaços, acentos, "#" e "?" podem fazer a URL
+    // pública apontar para uma chave diferente da armazenada.
+    const fileName = `${ubsId}/medicamentos.pdf`;
+    const uploadedAt = new Date().toISOString();
 
-    // 1. Limpar arquivos antigos
-    const { data: existingFiles } = await supabase.storage
-      .from('medicacoes_ubs')
-      .list(ubsId);
-
-    if (existingFiles && existingFiles.length > 0) {
-      const filesToRemove = existingFiles.map(f => `${ubsId}/${f.name}`);
-      await supabase.storage
-        .from('medicacoes_ubs')
-        .remove(filesToRemove);
-    }
-
-    // 2. Upload do novo arquivo
+    // Substitui o objeto sem apagar antes o PDF que ainda está disponível.
     const { error: uploadError } = await supabase.storage
       .from('medicacoes_ubs')
       .upload(fileName, file, {
-        cacheControl: '3600',
+        cacheControl: '0',
+        contentType: 'application/pdf',
         upsert: true
       });
 
@@ -476,29 +468,55 @@ export const savePDF = async (ubsId: string, file: File): Promise<string> => {
     const { data: urlData } = supabase.storage
       .from('medicacoes_ubs')
       .getPublicUrl(fileName);
+    const publicUrl = `${urlData.publicUrl}?v=${encodeURIComponent(uploadedAt)}`;
 
-    // 4. Remover registro antigo na tabela arquivos_pdf
-    await supabase
+    const { data: existingRecords, error: existingRecordsError } = await supabase
       .from('arquivos_pdf')
-      .delete()
+      .select('id')
       .eq('posto_id', ubsId);
 
-    // 5. Salvar novo registro na tabela arquivos_pdf
-    const { error: insertError, data: insertData } = await supabase
-      .from('arquivos_pdf')
-      .insert({
-        posto_id: ubsId,
-        url: urlData.publicUrl
-      })
-      .select('data_upload')
-      .single();
+    if (existingRecordsError) throw existingRecordsError;
 
-    if (insertError) {
-      console.error('Erro ao salvar no BD (arquivos_pdf):', insertError);
-      throw insertError;
+    if (existingRecords && existingRecords.length > 0) {
+      const { error: updateError } = await supabase
+        .from('arquivos_pdf')
+        .update({ url: publicUrl, data_upload: uploadedAt })
+        .eq('posto_id', ubsId);
+
+      if (updateError) {
+        console.error('Erro ao atualizar no BD (arquivos_pdf):', updateError);
+        throw updateError;
+      }
+    } else {
+      const { error: insertError } = await supabase
+        .from('arquivos_pdf')
+        .insert({
+          posto_id: ubsId,
+          url: publicUrl,
+          data_upload: uploadedAt
+        });
+
+      if (insertError) {
+        console.error('Erro ao salvar no BD (arquivos_pdf):', insertError);
+        throw insertError;
+      }
     }
 
-    // 6. Disparar push notification para usuários inscritos nessa UBS
+    // Só limpa objetos antigos depois que Storage e banco estão consistentes.
+    const { data: existingFiles } = await supabase.storage
+      .from('medicacoes_ubs')
+      .list(ubsId);
+    const obsoleteFiles = (existingFiles || [])
+      .filter(({ name }) => name !== 'medicamentos.pdf')
+      .map(({ name }) => `${ubsId}/${name}`);
+    if (obsoleteFiles.length > 0) {
+      const { error: cleanupError } = await supabase.storage
+        .from('medicacoes_ubs')
+        .remove(obsoleteFiles);
+      if (cleanupError) console.error('Erro ao limpar PDFs antigos:', cleanupError);
+    }
+
+    // Disparar push notification para usuários inscritos nessa UBS
     try {
       const { error: pushError } = await supabase.functions.invoke('send-push-notification', {
         body: { ubs_id: ubsId }
@@ -515,8 +533,7 @@ export const savePDF = async (ubsId: string, file: File): Promise<string> => {
       // Não lança erro pois o upload foi bem sucedido
     }
 
-    // Retorna o timestamp do banco de dados para ser usado no frontend
-    return insertData.data_upload;
+    return uploadedAt;
   } catch (error) {
     console.error('Erro fatal em savePDF:', error);
     throw error;
