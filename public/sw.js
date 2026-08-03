@@ -1,84 +1,51 @@
-// Cache versão 2 - forçar atualização
-const CACHE_VERSION = 'v4';
-const CACHE_NAME = `ubs-pereiro-cache-${CACHE_VERSION}`;
-const STATIC_CACHE = `ubs-pereiro-static-${CACHE_VERSION}`;
+const CACHE_VERSION = 'v5';
+const STATIC_CACHE = `consultmed-static-${CACHE_VERSION}`;
 
-// Instalando o service worker
-self.addEventListener('install', (event) => {
-  console.log('[SW] Installing service worker v4...');
-  self.skipWaiting(); // Força ativação imediata do SW novo
+self.addEventListener('install', () => {
+  self.skipWaiting();
 });
 
-// Ativando o service worker e limpando TODOS os caches antigos
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating service worker v4...');
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          // Remove TODOS os caches que não são da versão atual
-          if (cacheName !== CACHE_NAME && cacheName !== STATIC_CACHE) {
-            console.log('[SW] Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    }).then(() => {
-      console.log('[SW] Service worker v4 activated - all old caches cleared');
-      return self.clients.claim(); // assume controle imediato
-    })
+    caches.keys()
+      .then((cacheNames) => Promise.all(
+        cacheNames
+          .filter((cacheName) => cacheName !== STATIC_CACHE)
+          .map((cacheName) => caches.delete(cacheName))
+      ))
+      .then(() => self.clients.claim())
   );
 });
 
-// Estratégia: Network First para HTML, Cache First para assets
+const isCacheableAsset = (request, url) =>
+  request.method === 'GET' &&
+  url.origin === self.location.origin &&
+  ['script', 'style', 'image', 'font'].includes(request.destination);
+
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Network first para documentos HTML (sempre busca versão mais recente)
-  if (request.headers.get('accept')?.includes('text/html')) {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const clonedResponse = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, clonedResponse);
-          });
-          return response;
-        })
-        .catch(() => caches.match(request))
-    );
-    return;
-  }
-
-  // Cache first para assets estáticos (JS, CSS, imagens)
+  // Documents, API calls and authenticated requests always stay on the network.
   if (
-    request.destination === 'script' ||
-    request.destination === 'style' ||
-    request.destination === 'image' ||
-    request.destination === 'font'
+    request.mode === 'navigate' ||
+    request.headers.has('authorization') ||
+    url.pathname.startsWith('/api/') ||
+    !isCacheableAsset(request, url)
   ) {
-    event.respondWith(
-      caches.match(request).then((cachedResponse) => {
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-        return fetch(request).then((response) => {
-          if (response.status === 200) {
-            const clonedResponse = response.clone();
-            caches.open(STATIC_CACHE).then((cache) => {
-              cache.put(request, clonedResponse);
-            });
-          }
-          return response;
-        });
-      })
-    );
     return;
   }
 
-  // Para tudo mais: Network first
   event.respondWith(
-    fetch(request).catch(() => caches.match(request))
+    caches.open(STATIC_CACHE).then(async (cache) => {
+      const cachedResponse = await cache.match(request);
+      if (cachedResponse) return cachedResponse;
+
+      const response = await fetch(request);
+      if (response.ok && response.type === 'basic') {
+        await cache.put(request, response.clone());
+      }
+      return response;
+    })
   );
 });

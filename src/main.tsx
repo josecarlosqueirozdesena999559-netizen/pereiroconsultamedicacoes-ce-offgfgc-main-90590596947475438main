@@ -18,6 +18,11 @@ if (Capacitor.isNativePlatform()) {
 
 // Força reload quando o Service Worker for atualizado
 if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch((error) => {
+      console.error("[SW] Registration failed:", error);
+    });
+  });
   navigator.serviceWorker.addEventListener("controllerchange", () => {
     console.log("[SW] New service worker activated, reloading page...");
     window.location.reload();

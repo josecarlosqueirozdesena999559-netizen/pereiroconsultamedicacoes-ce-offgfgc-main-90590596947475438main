@@ -1,10 +1,25 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+const allowedOrigins = new Set([
+  "https://consultmedpereiro.com",
+  "https://www.consultmedpereiro.com",
+  "https://app.consultmedpereiro.com",
+  "http://localhost:5173",
+  "capacitor://localhost",
+]);
+
+function getCorsHeaders(origin: string | null): Record<string, string> {
+  const headers: Record<string, string> = {
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Vary": "Origin",
+  };
+  if (origin && allowedOrigins.has(origin)) {
+    headers["Access-Control-Allow-Origin"] = origin;
+  }
+  return headers;
+}
 
 // Função segura para converter ArrayBuffer para base64 (evita stack overflow)
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
@@ -19,12 +34,62 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 }
 
 serve(async (req) => {
+  const origin = req.headers.get("Origin");
+  const corsHeaders = getCorsHeaders(origin);
+
+  if (origin && !allowedOrigins.has(origin)) {
+    return new Response(JSON.stringify({ error: "Origem não permitida" }), {
+      status: 403,
+      headers: { "Content-Type": "application/json", "Vary": "Origin" },
+    });
+  }
+
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { status: 204, headers: corsHeaders });
+  }
+
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Método não permitido" }), {
+      status: 405,
+      headers: { ...corsHeaders, "Content-Type": "application/json", "Allow": "POST, OPTIONS" },
+    });
   }
 
   try {
     const { postoNome, postoLocalidade, medicamentoQuery, pdfUrl } = await req.json();
+
+    if (
+      typeof medicamentoQuery !== "string" ||
+      medicamentoQuery.trim().length < 2 ||
+      medicamentoQuery.length > 120 ||
+      typeof pdfUrl !== "string"
+    ) {
+      return new Response(JSON.stringify({ error: "Dados de busca inválidos" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const configuredSupabaseUrl = Deno.env.get("SUPABASE_URL");
+    if (!configuredSupabaseUrl) throw new Error("SUPABASE_URL não está configurada");
+
+    let parsedPdfUrl: URL;
+    try {
+      parsedPdfUrl = new URL(pdfUrl);
+    } catch {
+      return new Response(JSON.stringify({ error: "URL do PDF inválida" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const storageHost = new URL(configuredSupabaseUrl).hostname;
+    if (parsedPdfUrl.protocol !== "https:" || parsedPdfUrl.hostname !== storageHost) {
+      return new Response(JSON.stringify({ error: "Origem do PDF não permitida" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     console.log("=== NOVA BUSCA ===");
     console.log("Medicamento:", medicamentoQuery, "| Posto:", postoNome);
@@ -193,13 +258,21 @@ RETORNE APENAS O JSON, sem texto adicional, sem markdown.`;
       const parsed = JSON.parse(cleanContent);
 
       if (parsed.medicamentos && Array.isArray(parsed.medicamentos)) {
-        parsed.medicamentos = parsed.medicamentos.map((med: any) => ({
-          nome: med.nome || "N/A",
-          codigo: med.codigo || "N/A",
-          unidade: med.unidade || undefined,
-          lotes: Array.isArray(med.lotes) ? med.lotes : [],
-          quantidadeTotal: med.quantidadeTotal || "0"
-        }));
+parsed.medicamentos = parsed.medicamentos.map((med: unknown) => {
+          const item = typeof med === "object" && med !== null
+            ? med as Record<string, unknown>
+            : {};
+
+          return {
+            nome: typeof item.nome === "string" ? item.nome : "N/A",
+            codigo: typeof item.codigo === "string" ? item.codigo : "N/A",
+            unidade: typeof item.unidade === "string" ? item.unidade : undefined,
+            lotes: Array.isArray(item.lotes) ? item.lotes : [],
+            quantidadeTotal: typeof item.quantidadeTotal === "string" || typeof item.quantidadeTotal === "number"
+              ? item.quantidadeTotal
+              : "0",
+          };
+        });
       }
 
       console.log("Medicamentos encontrados:", parsed.medicamentos?.length || 0);

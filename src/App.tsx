@@ -51,7 +51,7 @@ const PublicApp = () => (
             <Route path="/ubs/:id" element={<UBSDetail />} />
             <Route path="/termos-de-uso" element={<TermosDeUso />} />
             <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
-            <Route path="*" element={<PublicHome />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </React.Suspense>
       </BrowserRouter>
