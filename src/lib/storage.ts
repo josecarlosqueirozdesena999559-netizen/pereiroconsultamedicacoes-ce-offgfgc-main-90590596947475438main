@@ -63,7 +63,8 @@ export const getUBS = async (): Promise<UBS[]> => {
 
     const { data: pdfs, error: pdfError } = await supabase
       .from('arquivos_pdf')
-      .select('*');
+      .select('*')
+      .order('data_upload', { ascending: false });
     if (pdfError) console.error('Erro ao buscar PDFs:', pdfError);
 
     const { data: usuarios, error: usuariosError } = await supabase
@@ -78,10 +79,8 @@ export const getUBS = async (): Promise<UBS[]> => {
 
     const result = (postos || []).map(posto => {
       // Pega o PDF mais recente para cada posto (ordena por data_upload desc)
-      const postoPdfs = pdfs?.filter(p => p.posto_id === posto.id) || [];
-      const pdf = postoPdfs.sort((a, b) => 
-        new Date(b.data_upload || 0).getTime() - new Date(a.data_upload || 0).getTime()
-      )[0] || null;
+      // A consulta já vem ordenada; evita reordenar o mesmo array em cada UBS.
+      const pdf = pdfs?.find(p => p.posto_id === posto.id) || null;
 
       // Encontra todos os responsáveis vinculados a este posto
       const responsavelVinculos = vinculacoes?.filter(v => v.posto_id === posto.id) || [];
@@ -445,6 +444,10 @@ export const clearAuth = (): void => {
 // PDF operations
 export const savePDF = async (ubsId: string, file: File): Promise<string> => {
   try {
+    if (file.type && file.type !== 'application/pdf') {
+      throw new Error('O arquivo selecionado precisa ser um PDF.');
+    }
+
     // Não usa o nome original: espaços, acentos, "#" e "?" podem fazer a URL
     // pública apontar para uma chave diferente da armazenada.
     const fileName = `${ubsId}/medicamentos.pdf`;
@@ -473,19 +476,34 @@ export const savePDF = async (ubsId: string, file: File): Promise<string> => {
     const { data: existingRecords, error: existingRecordsError } = await supabase
       .from('arquivos_pdf')
       .select('id')
-      .eq('posto_id', ubsId);
+      .eq('posto_id', ubsId)
+      .order('data_upload', { ascending: false });
 
     if (existingRecordsError) throw existingRecordsError;
 
     if (existingRecords && existingRecords.length > 0) {
+      const currentRecordId = existingRecords[0].id;
       const { error: updateError } = await supabase
         .from('arquivos_pdf')
         .update({ url: publicUrl, data_upload: uploadedAt })
-        .eq('posto_id', ubsId);
+        .eq('id', currentRecordId);
 
       if (updateError) {
         console.error('Erro ao atualizar no BD (arquivos_pdf):', updateError);
         throw updateError;
+      }
+
+      // Versões antigas criavam uma linha a cada envio. Mantemos somente a
+      // linha canônica para que nenhuma tela escolha uma URL de objeto removido.
+      const duplicateIds = existingRecords.slice(1).map(({ id }) => id);
+      if (duplicateIds.length > 0) {
+        const { error: duplicateError } = await supabase
+          .from('arquivos_pdf')
+          .delete()
+          .in('id', duplicateIds);
+        if (duplicateError) {
+          console.error('Erro ao remover registros duplicados de PDF:', duplicateError);
+        }
       }
     } else {
       const { error: insertError } = await supabase

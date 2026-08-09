@@ -71,7 +71,7 @@ const UBSDetail = () => {
         .eq("posto_id", id)
         .order("data_upload", { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
       
       if (arquivoData) {
         setArquivo(arquivoData);
@@ -214,7 +214,7 @@ const UBSDetail = () => {
             </Button>
           </div>
           <iframe
-            src={`https://docs.google.com/viewer?url=${encodeURIComponent(arquivo.url + '?t=' + Date.now())}&embedded=true`}
+            src={arquivo.url}
             className="flex-1 w-full bg-white"
             title="PDF de Medicamentos"
           />
