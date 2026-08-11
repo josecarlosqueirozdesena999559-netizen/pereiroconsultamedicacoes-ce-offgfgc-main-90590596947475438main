@@ -7,6 +7,7 @@ import { Upload, Download, AlertCircle, Clock, FileText } from "lucide-react";
 import { UBS } from "@/types";
 import { getUBS, savePDF, getUpdateChecks, saveUpdateCheck } from "@/lib/storage";
 import CorrectionRequestModal from "./CorrectionRequestModal";
+import { useToast } from "@/hooks/use-toast";
 
 const UserDashboard = () => {
   const [ubsList, setUbsList] = useState<UBS[]>([]);
@@ -15,6 +16,7 @@ const UserDashboard = () => {
     Record<string, { manha: boolean; tarde: boolean }>
   >({});
   const { user } = useAuth();
+  const { toast } = useToast();
 
   const todayFormattedDate = useMemo(
     () => new Date().toLocaleDateString("pt-BR"),
@@ -105,12 +107,12 @@ const UserDashboard = () => {
     if (!file || !user) return;
 
     if (file.type !== "application/pdf") {
-      console.error("Formato invÃ¡lido - apenas PDF");
+      toast({ title: "Arquivo inválido", description: "Envie apenas arquivos PDF.", variant: "destructive" });
       return;
     }
 
     if (file.size > 10 * 1024 * 1024) {
-      console.error("Arquivo muito grande - mÃ¡ximo 10MB");
+      toast({ title: "Arquivo muito grande", description: "O PDF deve ter no máximo 10MB.", variant: "destructive" });
       return;
     }
 
@@ -136,8 +138,12 @@ const UserDashboard = () => {
           }
         }
       }
+
+      toast({ title: "PDF enviado", description: "A lista da UBS foi atualizada com sucesso." });
     } catch (error) {
       console.error("Erro durante o upload:", error);
+      const description = error instanceof Error ? error.message : "Não foi possível salvar o PDF. Tente novamente.";
+      toast({ title: "Erro ao enviar PDF", description, variant: "destructive" });
     } finally {
       setUploadingUBS(null);
       await loadUserUBS();

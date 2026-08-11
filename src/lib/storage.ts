@@ -454,7 +454,7 @@ export const savePDF = async (ubsId: string, file: File): Promise<string> => {
     const uploadedAt = new Date().toISOString();
 
     // Substitui o objeto sem apagar antes o PDF que ainda está disponível.
-    const { error: uploadError } = await supabase.storage
+    const { data: uploadData, error: uploadError } = await supabase.storage
       .from('medicacoes_ubs')
       .upload(fileName, file, {
         cacheControl: '0',
@@ -468,9 +468,11 @@ export const savePDF = async (ubsId: string, file: File): Promise<string> => {
     }
 
     // 3. Obter URL pública
+    const uploadedPath = uploadData?.path || fileName;
+
     const { data: urlData } = supabase.storage
       .from('medicacoes_ubs')
-      .getPublicUrl(fileName);
+      .getPublicUrl(uploadedPath);
     const publicUrl = `${urlData.publicUrl}?v=${encodeURIComponent(uploadedAt)}`;
 
     const { data: existingRecords, error: existingRecordsError } = await supabase
@@ -486,7 +488,9 @@ export const savePDF = async (ubsId: string, file: File): Promise<string> => {
       const { error: updateError } = await supabase
         .from('arquivos_pdf')
         .update({ url: publicUrl, data_upload: uploadedAt })
-        .eq('id', currentRecordId);
+        .eq('id', currentRecordId)
+        .select('id')
+        .single();
 
       if (updateError) {
         console.error('Erro ao atualizar no BD (arquivos_pdf):', updateError);
@@ -512,7 +516,9 @@ export const savePDF = async (ubsId: string, file: File): Promise<string> => {
           posto_id: ubsId,
           url: publicUrl,
           data_upload: uploadedAt
-        });
+        })
+        .select('id')
+        .single();
 
       if (insertError) {
         console.error('Erro ao salvar no BD (arquivos_pdf):', insertError);
@@ -536,16 +542,17 @@ export const savePDF = async (ubsId: string, file: File): Promise<string> => {
 
     // Disparar push notification para usuários inscritos nessa UBS
     try {
-      const { error: pushError } = await supabase.functions.invoke('send-push-notification', {
+      void supabase.functions.invoke('send-push-notification', {
         body: { ubs_id: ubsId }
+      }).then(({ error: pushError }) => {
+        if (pushError) {
+          console.error('Erro ao enviar push notification:', pushError);
+        } else {
+          console.log('Push notification enviado com sucesso para UBS:', ubsId);
+        }
+      }).catch((pushError) => {
+        console.error('Erro ao chamar edge function de push:', pushError);
       });
-      
-      if (pushError) {
-        console.error('Erro ao enviar push notification:', pushError);
-        // Não lança erro pois o upload foi bem sucedido
-      } else {
-        console.log('Push notification enviado com sucesso para UBS:', ubsId);
-      }
     } catch (pushError) {
       console.error('Erro ao chamar edge function de push:', pushError);
       // Não lança erro pois o upload foi bem sucedido
