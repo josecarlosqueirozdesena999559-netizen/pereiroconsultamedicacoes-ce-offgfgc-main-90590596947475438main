@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { MessageCircle, X } from 'lucide-react';
 
 const WHATSAPP_NUMBER = '5588999046208';
-const WHATSAPP_MESSAGE = encodeURIComponent('Olá! Gostaria de mais informações sobre medicamentos pelo WhatsApp.');
+const WHATSAPP_MESSAGE = encodeURIComponent('Ol\u00e1! Gostaria de mais informa\u00e7\u00f5es sobre medicamentos pelo WhatsApp.');
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MESSAGE}`;
 
 const PWAInstallPrompt: React.FC = () => {
@@ -51,7 +51,7 @@ const PWAInstallPrompt: React.FC = () => {
               Fale com a ConsultMed
             </h3>
             <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-              Para mais informações, fale conosco pelo WhatsApp.
+              Para mais informa&ccedil;&otilde;es, fale conosco pelo WhatsApp.
             </p>
             <p className="text-sm font-medium text-primary mt-3">(88) 9904-6208</p>
 
