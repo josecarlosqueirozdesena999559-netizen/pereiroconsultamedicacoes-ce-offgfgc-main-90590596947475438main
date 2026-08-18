@@ -7,6 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { UBS } from '@/types';
 import QRCodeComponent from './QRCodeComponent';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { formatContactInfo } from '@/lib/contact';
 
 interface UBSCardProps {
   ubs: UBS;
@@ -115,7 +116,7 @@ const UBSCard = ({ ubs }: UBSCardProps) => {
             <div className="min-w-0 flex-1">
               <p className="font-medium text-foreground text-xs sm:text-sm">Contato</p>
               <p className="text-muted-foreground text-xs sm:text-sm break-words">
-                {ubs.contato || 'Disponível no local'}
+                {formatContactInfo(ubs.contato)}
               </p>
             </div>
           </div>

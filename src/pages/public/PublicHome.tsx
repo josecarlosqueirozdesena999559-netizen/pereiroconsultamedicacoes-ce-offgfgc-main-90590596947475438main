@@ -8,6 +8,7 @@ import { usePostos } from "@/hooks/usePostos";
 import PublicHeader from "@/components/PublicHeader";
 import Footer from "@/components/Footer";
 import { ChatWidget } from "@/components/ChatWidget";
+import { formatContactInfo } from "@/lib/contact";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 
@@ -127,7 +128,7 @@ const PublicHome = () => {
                       {posto.contato && (
                         <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
                           <Phone className="h-3.5 w-3.5 text-primary/70 shrink-0" />
-                          <span className="line-clamp-1">{posto.contato}</span>
+                          <span className="line-clamp-1">{formatContactInfo(posto.contato)}</span>
                         </div>
                       )}
                     </CardContent>

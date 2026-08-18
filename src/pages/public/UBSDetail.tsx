@@ -20,6 +20,7 @@ import {
 import PublicHeader from "@/components/PublicHeader";
 import Footer from "@/components/Footer";
 import { ChatWidget } from "@/components/ChatWidget";
+import { formatContactInfo } from "@/lib/contact";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -149,7 +150,7 @@ const UBSDetail = () => {
             {posto.contato && (
               <div className="flex items-center gap-2 text-sm">
                 <Phone className="h-4 w-4 text-muted-foreground" />
-                <span>{posto.contato}</span>
+                <span>{formatContactInfo(posto.contato)}</span>
               </div>
             )}
           </CardContent>
