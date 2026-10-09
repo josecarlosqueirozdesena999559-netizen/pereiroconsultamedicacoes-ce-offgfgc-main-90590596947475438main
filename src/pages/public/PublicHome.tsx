@@ -109,6 +109,7 @@ const PublicHome = () => {
               <Input
                 type="search"
                 placeholder="Digite o nome do medicamento..."
+                aria-label="Digite o nome do medicamento"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9 py-2 text-sm border-2 border-primary/20 focus:border-primary"
