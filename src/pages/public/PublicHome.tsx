@@ -1,8 +1,6 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Search, MapPin, Clock, Phone, Building2 } from "lucide-react";
@@ -17,7 +15,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 const PublicHome = () => {
   const { postos, loading } = usePostos();
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchOpen, setSearchOpen] = useState(false);
   const isMobile = useIsMobile();
 
   const filteredPostos = useMemo(() => {
@@ -59,74 +56,17 @@ const PublicHome = () => {
               Encontre a UBS mais próxima e consulte os medicamentos disponíveis.
             </p>
             
-            {/* Search opens in a modal so the results do not expand the page */}
-            <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="mx-auto mt-2 flex w-full max-w-md items-center justify-center gap-2 border-2 border-primary/20 text-primary hover:bg-primary/5"
-                >
-                  <Search className="h-4 w-4" />
-                  Pesquisar UBS
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="w-[calc(100%-2rem)] max-w-lg p-4 sm:p-6">
-                <DialogHeader>
-                  <DialogTitle className="text-primary">Pesquisar unidade de saúde</DialogTitle>
-                  <DialogDescription>
-                    Busque pelo nome da UBS ou pela localidade. Os resultados aparecem somente nesta janela.
-                  </DialogDescription>
-                </DialogHeader>
-
-                <div className="relative mt-2">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    autoFocus
-                    type="search"
-                    placeholder="Buscar UBS, localidade..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-9 border-2 border-primary/20 focus:border-primary"
-                  />
-                </div>
-
-                <div className="max-h-[55vh] space-y-2 overflow-y-auto pr-1">
-                  {loading ? (
-                    <p className="py-6 text-center text-sm text-muted-foreground">Carregando unidades...</p>
-                  ) : filteredPostos.length === 0 ? (
-                    <p className="py-6 text-center text-sm text-muted-foreground">
-                      Nenhuma unidade encontrada{searchTerm ? ` com "${searchTerm}"` : "."}
-                    </p>
-                  ) : (
-                    filteredPostos.map((posto) => (
-                      <Link
-                        key={posto.id}
-                        to={`/ubs/${posto.id}`}
-                        onClick={() => setSearchOpen(false)}
-                        className="block"
-                      >
-                        <div className="rounded-lg border border-primary/10 p-3 transition-colors hover:border-primary/30 hover:bg-primary/5">
-                          <div className="flex items-start justify-between gap-2">
-                            <p className="font-semibold text-primary">{posto.nome}</p>
-                            <Badge
-                              variant={posto.status === "aberto" ? "default" : "secondary"}
-                              className={`shrink-0 text-xs ${posto.status === "aberto" ? "bg-primary hover:bg-primary/90" : ""}`}
-                            >
-                              {posto.status === "aberto" ? "Aberto" : "Fechado"}
-                            </Badge>
-                          </div>
-                          <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                            <MapPin className="h-3.5 w-3.5 text-primary/70" />
-                            {posto.localidade}
-                          </p>
-                        </div>
-                      </Link>
-                    ))
-                  )}
-                </div>
-              </DialogContent>
-            </Dialog>
+            {/* Search Bar */}
+            <div className="max-w-md mx-auto relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                type="text"
+                placeholder="Buscar UBS, localidade..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 py-2 text-sm border-2 border-primary/20 focus:border-primary"
+              />
+            </div>
           </div>
 
           {/* UBS Grid */}
@@ -145,19 +85,19 @@ const PublicHome = () => {
                 </Card>
               ))}
             </div>
-          ) : !postos || postos.length === 0 ? (
+          ) : filteredPostos.length === 0 ? (
             <Card className="max-w-sm mx-auto shadow-md border border-primary/10">
               <CardContent className="p-4 sm:p-6 text-center">
                 <Building2 className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                 <h3 className="text-sm font-semibold mb-1">Nenhuma UBS encontrada</h3>
                 <p className="text-xs text-muted-foreground">
-                  Nenhuma UBS cadastrada no sistema
+                  {searchTerm ? `Nenhuma unidade encontrada com "${searchTerm}"` : 'Nenhuma UBS cadastrada no sistema'}
                 </p>
               </CardContent>
             </Card>
           ) : (
             <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-              {postos.map((posto) => (
+              {filteredPostos.map((posto) => (
                 <Link key={posto.id} to={`/ubs/${posto.id}`}>
                   <Card className="h-full hover:shadow-lg transition-all duration-200 cursor-pointer border-l-4 border-l-primary shadow-md border border-primary/10 hover:border-primary/30 active:scale-[0.98]">
                     <CardHeader className="p-3 sm:p-4 pb-2 bg-gradient-to-r from-primary/5 to-transparent">
