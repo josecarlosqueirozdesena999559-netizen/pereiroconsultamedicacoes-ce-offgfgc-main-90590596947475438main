@@ -39,7 +39,8 @@ const MedicationInventory = ({ ubsId, pdfUrl }: MedicationInventoryProps) => {
         const cached = await getMedicamentosExtraidos(ubsId);
         if (!active) return;
 
-        if (cached.length > 0) {
+        const cacheHasLotData = cached.length > 0 && cached.every((item) => Array.isArray(item?.lotes));
+        if (cacheHasLotData || !pdfUrl) {
           setMedications(cached as MedicamentoExtraido[]);
           return;
         }
@@ -51,9 +52,13 @@ const MedicationInventory = ({ ubsId, pdfUrl }: MedicationInventoryProps) => {
         const blob = await response.blob();
         const file = new File([blob], "medicamentos.pdf", { type: "application/pdf" });
         const extracted = await extractMedicamentosFromPdf(file);
-        if (active) setMedications(extracted);
+        if (active) setMedications(extracted.length > 0 ? extracted : (cached as MedicamentoExtraido[]));
       } catch (error) {
         console.error("Erro ao extrair medicamentos do PDF:", error);
+        if (active) {
+          const cached = await getMedicamentosExtraidos(ubsId);
+          setMedications(cached as MedicamentoExtraido[]);
+        }
       } finally {
         if (active) setLoading(false);
       }

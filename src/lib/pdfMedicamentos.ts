@@ -59,6 +59,19 @@ const parseLote = (line: string): LoteExtraido | null => {
     };
   }
 
+  // Formato do relatório Horus: ... VALIDADE LOTE FATOR BLOQ QTDE VALOR
+  // Exemplo: 30/04/2028 DFG2760A 1 N 130 17,55
+  const stockRowMatch = line.match(
+    /(?:^|\s)(\d{2}[/-]\d{2}[/-]\d{4})\s+([A-Z0-9][A-Z0-9.-]*)\s+\d+\s+[A-Z]\s+([\d.,]+)\s+[\d.,]+\s*$/i
+  );
+  if (stockRowMatch) {
+    return {
+      lote: stockRowMatch[2],
+      validade: stockRowMatch[1],
+      quantidade: parseQuantity(stockRowMatch[3]),
+    };
+  }
+
   return null;
 };
 
