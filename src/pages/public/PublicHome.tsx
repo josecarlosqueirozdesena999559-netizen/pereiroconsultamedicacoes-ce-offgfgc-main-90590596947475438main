@@ -5,8 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Search, MapPin, Clock, Phone, Building2 } from "lucide-react";
 import { usePostos } from "@/hooks/usePostos";
-import { getMedicamentosExtraidos } from "@/lib/storage";
-import type { MedicamentoExtraido } from "@/lib/pdfMedicamentos";
+import { getMedicamentosExtraidos, getPDF } from "@/lib/storage";
+import { extractMedicamentosFromPdf, type MedicamentoExtraido } from "@/lib/pdfMedicamentos";
 import PublicHeader from "@/components/PublicHeader";
 import Footer from "@/components/Footer";
 import { ChatWidget } from "@/components/ChatWidget";
@@ -27,7 +27,25 @@ const PublicHome = () => {
     let active = true;
     setLoadingMedications(true);
     Promise.all(
-      postos.map(async (posto) => [posto.id, await getMedicamentosExtraidos(posto.id)] as const)
+      postos.map(async (posto) => {
+        const cached = await getMedicamentosExtraidos(posto.id);
+        if (cached.length > 0) return [posto.id, cached as MedicamentoExtraido[]] as const;
+
+        try {
+          const pdf = await getPDF(posto.id);
+          if (!pdf?.url) return [posto.id, []] as const;
+          const response = await fetch(pdf.url);
+          if (!response.ok) return [posto.id, []] as const;
+          const blob = await response.blob();
+          const extracted = await extractMedicamentosFromPdf(
+            new File([blob], "medicamentos.pdf", { type: "application/pdf" })
+          );
+          return [posto.id, extracted] as const;
+        } catch (error) {
+          console.error(`Erro ao ler medicamentos da UBS ${posto.nome}:`, error);
+          return [posto.id, []] as const;
+        }
+      })
     )
       .then((entries) => {
         if (active) setMedicationsByPost(Object.fromEntries(entries) as Record<string, MedicamentoExtraido[]>);
@@ -90,14 +108,14 @@ const PublicHome = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 type="search"
-                placeholder="Pesquisar medicamento..."
+                placeholder="Pesquisar UBS ou medicamento..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9 py-2 text-sm border-2 border-primary/20 focus:border-primary"
               />
             </div>
             <p className="mt-2 text-xs text-muted-foreground">
-              Digite o nome ou código para ver em qual posto está disponível e a quantidade.
+              Digite o nome da UBS ou do medicamento para consultar todos os postos, quantidade, lote e validade.
             </p>
           </div>
 
@@ -122,7 +140,7 @@ const PublicHome = () => {
               ) : (
                 <div className="space-y-3">
                   <p className="text-sm text-muted-foreground">
-                    Encontrado em {medicationResults.length} {medicationResults.length === 1 ? "unidade" : "unidades"}:
+                    Medicamento encontrado em {medicationResults.length} {medicationResults.length === 1 ? "posto" : "postos"}:
                   </p>
                   {medicationResults.map(({ posto, medication }) => (
                     <Link key={`${posto.id}-${medication.codigo}-${medication.nome}`} to={`/ubs/${posto.id}`}>
@@ -142,9 +160,15 @@ const PublicHome = () => {
                             </span>
                           </div>
                           {medication.lotes?.length > 0 && (
-                            <p className="mt-2 text-xs text-muted-foreground">
-                              {medication.lotes.length} {medication.lotes.length === 1 ? "lote disponível" : "lotes disponíveis"}
-                            </p>
+                            <div className="mt-3 space-y-1 rounded-md bg-muted/40 p-2 text-xs text-muted-foreground">
+                              <p className="font-semibold text-primary">Lotes e validades:</p>
+                              {medication.lotes.map((lote) => (
+                                <p key={`${lote.lote}-${lote.validade}`}>
+                                  <strong>Lote:</strong> {lote.lote} — <strong>Validade:</strong> {lote.validade}
+                                  {lote.quantidade !== null && lote.quantidade !== undefined && ` — Quantidade: ${lote.quantidade} ${medication.unidade || ""}`}
+                                </p>
+                              ))}
+                            </div>
                           )}
                         </CardContent>
                       </Card>
