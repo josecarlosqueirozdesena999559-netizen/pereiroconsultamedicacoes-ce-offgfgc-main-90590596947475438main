@@ -97,10 +97,10 @@ const PublicHome = () => {
         <div className="container mx-auto px-3 sm:px-4">
           <div className="text-center mb-4 sm:mb-6 md:mb-10">
             <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-primary mb-2 sm:mb-3">
-              Nossas Unidades Básicas de Saúde
+              Pesquisar medicamentos
             </h2>
             <p className="text-xs sm:text-sm md:text-base text-muted-foreground max-w-2xl mx-auto mb-3 sm:mb-4 leading-relaxed">
-              Encontre a UBS mais próxima e consulte os medicamentos disponíveis.
+              Digite o nome do medicamento para ver quais postos possuem o produto, a quantidade, o lote e a validade.
             </p>
             
             {/* Busca global de medicamentos */}
@@ -108,7 +108,7 @@ const PublicHome = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 type="search"
-                placeholder="Pesquisar UBS ou medicamento..."
+                placeholder="Digite o nome do medicamento..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9 py-2 text-sm border-2 border-primary/20 focus:border-primary"
