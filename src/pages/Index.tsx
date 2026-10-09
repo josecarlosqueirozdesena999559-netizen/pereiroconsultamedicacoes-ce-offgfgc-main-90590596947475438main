@@ -123,16 +123,17 @@ const Index = () => {
                 <div className="space-y-3">
                   <p className="text-sm text-muted-foreground">Encontrado em {medicationResults.length} {medicationResults.length === 1 ? 'posto' : 'postos'}:</p>
                   {medicationResults.map(({ ubs, medication }) => (
-                    <Card key={`${ubs.id}-${medication.codigo}-${medication.nome}`} className="border-l-4 border-l-primary shadow-md">
+                    <Card key={`${ubs.id}-${medication.codigo}-${medication.nome}`} className="overflow-hidden border-primary/15 shadow-md">
+                      <CardHeader className="border-b bg-primary/5 p-4">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="min-w-0"><CardTitle className="text-base text-primary">{medication.nome}</CardTitle><p className="mt-1 text-xs text-muted-foreground">Código: {medication.codigo}</p></div>
+                          <div className="rounded-md bg-primary px-3 py-1.5 text-right text-xs font-semibold text-primary-foreground"><span className="block">{ubs.nome}</span><span className="font-normal opacity-90">{ubs.localidade}</span></div>
+                        </div>
+                      </CardHeader>
                       <CardContent className="p-4">
-                        <div className="flex flex-wrap items-start justify-between gap-2">
-                          <div><h3 className="font-semibold text-primary">{medication.nome}</h3><p className="mt-1 text-xs text-muted-foreground">Código: {medication.codigo}</p></div>
-                          <span className="rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground">{ubs.nome}</span>
-                        </div>
-                        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                          <span>Quantidade: <strong className="text-foreground">{medication.quantidade ?? 'Não informada'}{medication.unidade ? ` ${medication.unidade}` : ''}</strong></span>
-                        </div>
-                        {medication.lotes?.length > 0 && <div className="mt-3 space-y-1 rounded-md bg-muted/40 p-2 text-xs text-muted-foreground"><p className="font-semibold text-primary">Lotes e validades:</p>{medication.lotes.map((lote) => <p key={`${lote.lote}-${lote.validade}`}><strong>Lote:</strong> {lote.lote} — <strong>Validade:</strong> {lote.validade}{lote.quantidade !== null && lote.quantidade !== undefined ? ` — Quantidade: ${lote.quantidade} ${medication.unidade || ''}` : ''}</p>)}</div>}
+                        <div className="mb-3 rounded-md border border-primary/15 bg-background p-3"><p className="text-xs text-muted-foreground">Quantidade total disponível</p><p className="text-lg font-bold text-primary">{medication.quantidade ?? 'Não informada'}{medication.unidade ? ` ${medication.unidade}` : ''}</p></div>
+                        {medication.lotes?.length > 0 && <div className="overflow-hidden rounded-md border"><div className="border-b bg-muted/50 px-3 py-2 text-xs font-semibold text-primary">Lotes disponíveis</div><div className="grid grid-cols-[1fr_1fr_auto] gap-2 bg-muted/20 px-3 py-2 text-[11px] font-medium text-muted-foreground"><span>Lote</span><span>Validade</span><span>Qtd.</span></div>{medication.lotes.map((lote) => <div key={`${lote.lote}-${lote.validade}`} className="grid grid-cols-[1fr_1fr_auto] gap-2 border-t px-3 py-2 text-xs"><span className="font-medium">{lote.lote}</span><span>{lote.validade}</span><span>{lote.quantidade ?? '—'} {medication.unidade || ''}</span></div>)}</div>}
+                        {(!medication.lotes || medication.lotes.length === 0) && <p className="text-xs text-muted-foreground">Lote e validade não informados no relatório.</p>}
                       </CardContent>
                     </Card>
                   ))}
