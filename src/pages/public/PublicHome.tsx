@@ -1,10 +1,12 @@
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Search, MapPin, Clock, Phone, Building2 } from "lucide-react";
 import { usePostos } from "@/hooks/usePostos";
+import { getMedicamentosExtraidos } from "@/lib/storage";
+import type { MedicamentoExtraido } from "@/lib/pdfMedicamentos";
 import PublicHeader from "@/components/PublicHeader";
 import Footer from "@/components/Footer";
 import { ChatWidget } from "@/components/ChatWidget";
@@ -15,16 +17,43 @@ import { useIsMobile } from "@/hooks/use-mobile";
 const PublicHome = () => {
   const { postos, loading } = usePostos();
   const [searchTerm, setSearchTerm] = useState("");
+  const [medicationsByPost, setMedicationsByPost] = useState<Record<string, MedicamentoExtraido[]>>({});
+  const [loadingMedications, setLoadingMedications] = useState(false);
   const isMobile = useIsMobile();
 
-  const filteredPostos = useMemo(() => {
-    if (!postos) return [];
-    return postos.filter(
-      (posto) =>
-        posto.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        posto.localidade.toLowerCase().includes(searchTerm.toLowerCase())
+  useEffect(() => {
+    if (!postos.length) return;
+
+    let active = true;
+    setLoadingMedications(true);
+    Promise.all(
+      postos.map(async (posto) => [posto.id, await getMedicamentosExtraidos(posto.id)] as const)
+    )
+      .then((entries) => {
+        if (active) setMedicationsByPost(Object.fromEntries(entries) as Record<string, MedicamentoExtraido[]>);
+      })
+      .finally(() => {
+        if (active) setLoadingMedications(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [postos]);
+
+  const normalizeSearch = (value: string) =>
+    value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR").trim();
+
+  const medicationResults = useMemo(() => {
+    const query = normalizeSearch(searchTerm);
+    if (!query) return [];
+
+    return postos.flatMap((posto) =>
+      (medicationsByPost[posto.id] || [])
+        .filter((medication) => normalizeSearch(`${medication.nome} ${medication.codigo}`).includes(query))
+        .map((medication) => ({ posto, medication }))
     );
-  }, [postos, searchTerm]);
+  }, [postos, medicationsByPost, searchTerm]);
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-background to-secondary/20">
@@ -56,21 +85,77 @@ const PublicHome = () => {
               Encontre a UBS mais próxima e consulte os medicamentos disponíveis.
             </p>
             
-            {/* Search Bar */}
+            {/* Busca global de medicamentos */}
             <div className="max-w-md mx-auto relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
-                type="text"
-                placeholder="Buscar UBS, localidade..."
+                type="search"
+                placeholder="Pesquisar medicamento..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9 py-2 text-sm border-2 border-primary/20 focus:border-primary"
               />
             </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Digite o nome ou código para ver em qual posto está disponível e a quantidade.
+            </p>
           </div>
 
-          {/* UBS Grid */}
-          {loading ? (
+          {searchTerm.trim() ? (
+            <div className="mx-auto max-w-3xl">
+              {loadingMedications ? (
+                <Card className="border-primary/10 shadow-md">
+                  <CardContent className="p-6 text-center text-sm text-muted-foreground">
+                    Pesquisando medicamentos nas unidades...
+                  </CardContent>
+                </Card>
+              ) : medicationResults.length === 0 ? (
+                <Card className="border-primary/10 shadow-md">
+                  <CardContent className="p-6 text-center">
+                    <Search className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
+                    <h3 className="text-sm font-semibold">Medicamento não encontrado</h3>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Não encontramos “{searchTerm}” nas listas das unidades.
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Encontrado em {medicationResults.length} {medicationResults.length === 1 ? "unidade" : "unidades"}:
+                  </p>
+                  {medicationResults.map(({ posto, medication }) => (
+                    <Link key={`${posto.id}-${medication.codigo}-${medication.nome}`} to={`/ubs/${posto.id}`}>
+                      <Card className="mb-3 border-l-4 border-l-primary shadow-md transition-all hover:border-primary/30 hover:shadow-lg">
+                        <CardContent className="p-4">
+                          <div className="flex flex-wrap items-start justify-between gap-2">
+                            <div>
+                              <h3 className="font-semibold text-primary">{medication.nome}</h3>
+                              <p className="mt-1 text-xs text-muted-foreground">Código: {medication.codigo}</p>
+                            </div>
+                            <Badge className="bg-primary hover:bg-primary/90">{posto.nome}</Badge>
+                          </div>
+                          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                            <span>Local: {posto.localidade}</span>
+                            <span className="font-semibold text-foreground">
+                              Quantidade: {medication.quantidade ?? "Não informada"}{medication.unidade ? ` ${medication.unidade}` : ""}
+                            </span>
+                          </div>
+                          {medication.lotes?.length > 0 && (
+                            <p className="mt-2 text-xs text-muted-foreground">
+                              {medication.lotes.length} {medication.lotes.length === 1 ? "lote disponível" : "lotes disponíveis"}
+                            </p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+          /* UBS Grid */
+          loading ? (
             <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <Card key={i} className="animate-pulse shadow-md border border-primary/10">
@@ -85,7 +170,7 @@ const PublicHome = () => {
                 </Card>
               ))}
             </div>
-          ) : filteredPostos.length === 0 ? (
+          ) : postos.length === 0 ? (
             <Card className="max-w-sm mx-auto shadow-md border border-primary/10">
               <CardContent className="p-4 sm:p-6 text-center">
                 <Building2 className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
@@ -97,7 +182,7 @@ const PublicHome = () => {
             </Card>
           ) : (
             <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-              {filteredPostos.map((posto) => (
+              {postos.map((posto) => (
                 <Link key={posto.id} to={`/ubs/${posto.id}`}>
                   <Card className="h-full hover:shadow-lg transition-all duration-200 cursor-pointer border-l-4 border-l-primary shadow-md border border-primary/10 hover:border-primary/30 active:scale-[0.98]">
                     <CardHeader className="p-3 sm:p-4 pb-2 bg-gradient-to-r from-primary/5 to-transparent">
@@ -136,6 +221,7 @@ const PublicHome = () => {
                 </Link>
               ))}
             </div>
+          )
           )}
         </div>
       </section>
