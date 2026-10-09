@@ -145,19 +145,17 @@ const PublicHome = () => {
                   </p>
                   {medicationResults.map(({ posto, medication }) => (
                     <Link key={`${posto.id}-${medication.codigo}-${medication.nome}`} to={`/ubs/${posto.id}`}>
-                      <Card className="mb-3 overflow-hidden border-primary/15 shadow-md transition-all hover:border-primary/30 hover:shadow-lg">
-                        <CardHeader className="border-b bg-primary/5 p-4">
-                          <div className="flex flex-wrap items-start justify-between gap-3">
-                            <div className="min-w-0"><CardTitle className="text-base text-primary">{medication.nome}</CardTitle><p className="mt-1 text-xs text-muted-foreground">Código: {medication.codigo}</p></div>
-                            <Badge className="bg-primary px-3 py-1.5 text-right hover:bg-primary/90"><span className="block">{posto.nome}</span><span className="font-normal opacity-90">{posto.localidade}</span></Badge>
+                      <Card className="mb-3 overflow-hidden border shadow-sm transition-shadow hover:shadow-md">
+                        <CardHeader className="border-b p-4">
+                          <div className="min-w-0"><CardTitle className="text-base font-semibold text-foreground">{medication.nome}</CardTitle><p className="mt-1 text-xs text-muted-foreground">Código: {medication.codigo}</p><p className="mt-2 text-sm text-primary"><span className="font-semibold">Posto:</span> {posto.nome} <span className="text-muted-foreground">· {posto.localidade}</span></p>
                           </div>
                         </CardHeader>
                         <CardContent className="p-4">
-                          <div className="mb-3 rounded-md border border-primary/15 bg-background p-3"><p className="text-xs text-muted-foreground">Quantidade total disponível</p><p className="text-lg font-bold text-primary">{medication.quantidade ?? "Não informada"}{medication.unidade ? ` ${medication.unidade}` : ""}</p></div>
+                          <div className="mb-3 flex items-center justify-between rounded-md bg-muted/30 px-3 py-2"><span className="text-xs text-muted-foreground">Quantidade total</span><strong className="text-sm text-foreground">{medication.quantidade ?? "Não informada"}{medication.unidade ? ` ${medication.unidade}` : ""}</strong></div>
                           {medication.lotes?.length > 0 && (
                             <div className="overflow-hidden rounded-md border">
-                              <div className="border-b bg-muted/50 px-3 py-2 text-xs font-semibold text-primary">Lotes disponíveis</div>
-                              <div className="grid grid-cols-[1fr_1fr_auto] gap-2 bg-muted/20 px-3 py-2 text-[11px] font-medium text-muted-foreground"><span>Lote</span><span>Validade</span><span>Qtd.</span></div>
+                              <div className="border-b px-3 py-2 text-xs font-semibold text-foreground">Lotes disponíveis</div>
+                              <div className="grid grid-cols-[1fr_1fr_auto] gap-2 bg-muted/30 px-3 py-2 text-[11px] font-medium text-muted-foreground"><span>Lote</span><span>Validade</span><span>Quantidade</span></div>
                               {medication.lotes.map((lote) => <div key={`${lote.lote}-${lote.validade}`} className="grid grid-cols-[1fr_1fr_auto] gap-2 border-t px-3 py-2 text-xs"><span className="font-medium">{lote.lote}</span><span>{lote.validade}</span><span>{lote.quantidade ?? "—"} {medication.unidade || ""}</span></div>)}
                             </div>
                           )}
