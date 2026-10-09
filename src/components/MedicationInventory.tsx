@@ -4,16 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { getMedicamentosExtraidos } from "@/lib/storage";
-import type { MedicamentoExtraido } from "@/lib/pdfMedicamentos";
+import { extractMedicamentosFromPdf, type MedicamentoExtraido } from "@/lib/pdfMedicamentos";
 
 interface MedicationInventoryProps {
   ubsId: string;
+  pdfUrl?: string;
 }
 
 const normalizeText = (value: string) =>
   value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR").trim();
 
-const MedicationInventory = ({ ubsId }: MedicationInventoryProps) => {
+const MedicationInventory = ({ ubsId, pdfUrl }: MedicationInventoryProps) => {
   const [medications, setMedications] = useState<MedicamentoExtraido[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -21,18 +22,38 @@ const MedicationInventory = ({ ubsId }: MedicationInventoryProps) => {
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
-    getMedicamentosExtraidos(ubsId)
-      .then((data) => {
-        if (active) setMedications(data as MedicamentoExtraido[]);
-      })
-      .finally(() => {
+
+    const loadMedications = async () => {
+      setLoading(true);
+      try {
+        const cached = await getMedicamentosExtraidos(ubsId);
+        if (!active) return;
+
+        if (cached.length > 0) {
+          setMedications(cached as MedicamentoExtraido[]);
+          return;
+        }
+
+        // PDFs enviados antes da criação do cache também são extraídos sob demanda.
+        if (!pdfUrl) return;
+        const response = await fetch(pdfUrl);
+        if (!response.ok) throw new Error(`Falha ao carregar o PDF (${response.status})`);
+        const blob = await response.blob();
+        const file = new File([blob], "medicamentos.pdf", { type: "application/pdf" });
+        const extracted = await extractMedicamentosFromPdf(file);
+        if (active) setMedications(extracted);
+      } catch (error) {
+        console.error("Erro ao extrair medicamentos do PDF:", error);
+      } finally {
         if (active) setLoading(false);
-      });
+      }
+    };
+
+    void loadMedications();
     return () => {
       active = false;
     };
-  }, [ubsId]);
+  }, [ubsId, pdfUrl]);
 
   const filtered = useMemo(() => {
     const query = normalizeText(search);

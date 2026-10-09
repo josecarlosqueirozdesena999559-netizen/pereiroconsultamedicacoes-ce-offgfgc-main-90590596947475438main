@@ -149,7 +149,7 @@ const UBSCard = ({ ubs }: UBSCardProps) => {
             </div>
           </div>
           {ubs.pdfUrl && (
-            <MedicationInventory ubsId={ubs.id} />
+            <MedicationInventory ubsId={ubs.id} pdfUrl={ubs.pdfUrl} />
           )}
           {ubs.pdfUltimaAtualizacao && (
             <div className="flex items-center justify-center text-xs text-muted-foreground bg-muted/50 p-2 rounded">

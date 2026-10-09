@@ -198,7 +198,7 @@ const UBSDetail = () => {
         </Card>
 
         <div className="mb-6">
-          <MedicationInventory ubsId={posto.id} />
+          <MedicationInventory ubsId={posto.id} pdfUrl={arquivo?.url} />
         </div>
 
       </main>
