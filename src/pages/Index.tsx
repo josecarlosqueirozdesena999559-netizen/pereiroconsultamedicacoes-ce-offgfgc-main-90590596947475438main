@@ -30,18 +30,19 @@ const Index = () => {
 
     Promise.all(ubsList.map(async (ubs) => {
       const cached = await getMedicamentosExtraidos(ubs.id);
-      if (cached.length > 0) return [ubs.id, cached as MedicamentoExtraido[]] as const;
+      const cacheHasLotData = cached.length > 0 && cached.every((item) => Array.isArray(item?.lotes));
+      if (cacheHasLotData) return [ubs.id, cached as MedicamentoExtraido[]] as const;
       try {
         const pdf = await getPDF(ubs.id);
-        if (!pdf?.url) return [ubs.id, []] as const;
+        if (!pdf?.url) return [ubs.id, cached as MedicamentoExtraido[]] as const;
         const response = await fetch(pdf.url);
-        if (!response.ok) return [ubs.id, []] as const;
+        if (!response.ok) return [ubs.id, cached as MedicamentoExtraido[]] as const;
         const blob = await response.blob();
         const extracted = await extractMedicamentosFromPdf(new File([blob], 'medicamentos.pdf', { type: 'application/pdf' }));
-        return [ubs.id, extracted] as const;
+        return [ubs.id, extracted.length > 0 ? extracted : cached as MedicamentoExtraido[]] as const;
       } catch (error) {
         console.error(`Erro ao ler medicamentos da UBS ${ubs.nome}:`, error);
-        return [ubs.id, []] as const;
+        return [ubs.id, cached as MedicamentoExtraido[]] as const;
       }
     })).then((entries) => {
       if (active) setMedicationsByPost(Object.fromEntries(entries) as Record<string, MedicamentoExtraido[]>);
