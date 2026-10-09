@@ -198,9 +198,9 @@ const PublicHome = () => {
             <Card className="max-w-sm mx-auto shadow-md border border-primary/10">
               <CardContent className="p-4 sm:p-6 text-center">
                 <Building2 className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                <h3 className="text-sm font-semibold mb-1">Nenhuma UBS encontrada</h3>
+                <h3 className="text-sm font-semibold mb-1">Nenhum medicamento encontrado</h3>
                 <p className="text-xs text-muted-foreground">
-                  {searchTerm ? `Nenhuma unidade encontrada com "${searchTerm}"` : 'Nenhuma UBS cadastrada no sistema'}
+                  Nenhuma lista de medicamentos cadastrada no sistema.
                 </p>
               </CardContent>
             </Card>
