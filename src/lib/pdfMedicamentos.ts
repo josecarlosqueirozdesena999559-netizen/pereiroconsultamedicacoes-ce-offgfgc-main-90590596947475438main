@@ -3,11 +3,18 @@ import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 
 GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 
+export interface LoteExtraido {
+  lote: string;
+  validade: string;
+  quantidade: number | null;
+}
+
 export interface MedicamentoExtraido {
   codigo: string;
   nome: string;
   unidade: string;
   quantidade: number | null;
+  lotes: LoteExtraido[];
 }
 
 type PdfTextItem = {
@@ -27,6 +34,32 @@ const parseQuantity = (value: string): number | null => {
   const normalized = value.replace(/\./g, "").replace(/,/g, "").trim();
   const quantity = Number.parseInt(normalized, 10);
   return Number.isFinite(quantity) ? quantity : null;
+};
+
+const parseLote = (line: string): LoteExtraido | null => {
+  const labeledMatch = line.match(
+    /(?:Lote|Lote\s*º|Lote\s*n[ºo]?)\s*:?\s*([A-Z0-9][A-Z0-9.-]*)[\s|,;]*(?:Validade|Vencimento)\s*:?\s*(\d{2}[/-]\d{2}[/-]\d{2,4})[\s|,;]*(?:(?:Quantidade|Qtd|Estoque)\s*:?\s*)?([\d.,]+)/i
+  );
+  if (labeledMatch) {
+    return {
+      lote: labeledMatch[1],
+      validade: labeledMatch[2],
+      quantidade: parseQuantity(labeledMatch[3]),
+    };
+  }
+
+  const reorderedMatch = line.match(
+    /(?:Validade|Vencimento)\s*:?\s*(\d{2}[/-]\d{2}[/-]\d{2,4})[\s|,;]*(?:Lote|Lote\s*º|Lote\s*n[ºo]?)\s*:?\s*([A-Z0-9][A-Z0-9.-]*)[\s|,;]*(?:(?:Quantidade|Qtd|Estoque)\s*:?\s*)?([\d.,]+)/i
+  );
+  if (reorderedMatch) {
+    return {
+      lote: reorderedMatch[2],
+      validade: reorderedMatch[1],
+      quantidade: parseQuantity(reorderedMatch[3]),
+    };
+  }
+
+  return null;
 };
 
 const medicationFromLine = (line: string): MedicamentoExtraido | null => {
@@ -49,10 +82,11 @@ const medicationFromLine = (line: string): MedicamentoExtraido | null => {
     nome,
     unidade: unitMatch?.[1]?.replace(/\.$/, "") || "",
     quantidade: null,
+    lotes: [],
   };
 };
 
-/** Extrai os produtos e as respetivas quantidades de um PDF de inventário com texto selecionável. */
+/** Extrai medicamentos, quantidades totais e lotes de um PDF de inventário com texto selecionável. */
 export const extractMedicamentosFromPdf = async (file: File): Promise<MedicamentoExtraido[]> => {
   const data = new Uint8Array(await file.arrayBuffer());
   const pdf = await getDocument({ data }).promise;
@@ -92,7 +126,12 @@ export const extractMedicamentosFromPdf = async (file: File): Promise<Medicament
           continue;
         }
 
-        if (current && /Total\s*:/i.test(line)) {
+        if (!current) continue;
+
+        const lote = parseLote(line);
+        if (lote) current.lotes.push(lote);
+
+        if (/Total\s*:/i.test(line)) {
           const totalMatch = line.match(/Total\s*:\s*([\d.]+)(?:\s+[\d.,]+)?/i);
           if (totalMatch) current.quantidade = parseQuantity(totalMatch[1]);
         }
@@ -103,15 +142,24 @@ export const extractMedicamentosFromPdf = async (file: File): Promise<Medicament
     await pdf.destroy();
   }
 
-  // O cabeçalho de um produto pode repetir-se na quebra entre páginas. Mantemos
-  // uma entrada por código/nome e preferimos a cópia que inclui quantidade total.
+  // O cabeçalho pode repetir-se na quebra entre páginas. Consolidamos
+  // quantidade total e lotes para manter uma entrada completa por medicamento.
   const unique = new Map<string, MedicamentoExtraido>();
   for (const medication of extracted) {
     const key = `${medication.codigo}|${normalizeName(medication.nome)}`;
     const previous = unique.get(key);
-    if (!previous || (medication.quantidade !== null && (previous.quantidade === null || medication.quantidade > previous.quantidade))) {
+    if (!previous) {
       unique.set(key, medication);
+      continue;
     }
+
+    if (medication.quantidade !== null && (previous.quantidade === null || medication.quantidade > previous.quantidade)) {
+      previous.quantidade = medication.quantidade;
+    }
+
+    const lotes = new Map(previous.lotes.map((lote) => [`${lote.lote}|${lote.validade}`, lote]));
+    medication.lotes.forEach((lote) => lotes.set(`${lote.lote}|${lote.validade}`, lote));
+    previous.lotes = [...lotes.values()];
   }
 
   return [...unique.values()].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" }));

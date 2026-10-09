@@ -14,6 +14,16 @@ interface MedicationInventoryProps {
 const normalizeText = (value: string) =>
   value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR").trim();
 
+const sortByValidity = (a: { validade: string }, b: { validade: string }) => {
+  const toDate = (value: string) => {
+    const parts = value.split(/[/-]/).map(Number);
+    if (parts.length !== 3) return Number.MAX_SAFE_INTEGER;
+    const [day, month, year] = parts;
+    return new Date(year < 100 ? 2000 + year : year, month - 1, day).getTime();
+  };
+  return toDate(a.validade) - toDate(b.validade);
+};
+
 const MedicationInventory = ({ ubsId, pdfUrl }: MedicationInventoryProps) => {
   const [medications, setMedications] = useState<MedicamentoExtraido[]>([]);
   const [search, setSearch] = useState("");
@@ -126,6 +136,25 @@ const MedicationInventory = ({ ubsId, pdfUrl }: MedicationInventoryProps) => {
                     </span>
                   )}
                 </div>
+                {item.lotes?.length > 0 && (
+                  <div className="mt-3 rounded-md bg-muted/40 p-2">
+                    <p className="mb-2 text-xs font-semibold text-primary">Lotes e validades</p>
+                    <div className="space-y-1.5">
+                      {[...item.lotes].sort(sortByValidity).map((lote) => (
+                        <div
+                          key={`${lote.lote}-${lote.validade}`}
+                          className="grid grid-cols-[1fr_auto_auto] gap-2 border-b border-border/60 pb-1 text-xs last:border-0 last:pb-0"
+                        >
+                          <span><strong>Lote:</strong> {lote.lote}</span>
+                          <span><strong>Validade:</strong> {lote.validade}</span>
+                          {lote.quantidade !== null && lote.quantidade !== undefined && (
+                            <span><strong>Qtd:</strong> {lote.quantidade.toLocaleString("pt-BR")}</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </li>
             ))}
           </ul>
