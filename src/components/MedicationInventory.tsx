@@ -86,14 +86,14 @@ const MedicationInventory = ({ ubsId, pdfUrl }: MedicationInventoryProps) => {
           className="w-full gap-2 border-primary/30 text-primary hover:bg-primary/5"
         >
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-          {loading ? "Carregando medicamentos…" : "Pesquisar medicamentos extraídos"}
+          {loading ? "Carregando medicamentos…" : "Ver medicamentos"}
         </Button>
       </DialogTrigger>
       <DialogContent className="w-[calc(100%-2rem)] max-w-2xl p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-primary">
             <PackageSearch className="h-5 w-5" />
-            Pesquisar medicamentos extraídos
+            Medicamentos disponíveis
           </DialogTitle>
           <DialogDescription>
             Pesquise pelo nome, código ou unidade. A lista é exibida somente nesta janela.
