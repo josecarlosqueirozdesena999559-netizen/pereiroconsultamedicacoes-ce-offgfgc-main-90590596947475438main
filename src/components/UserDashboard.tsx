@@ -139,7 +139,7 @@ const UserDashboard = () => {
         }
       }
 
-      toast({ title: "PDF enviado", description: "A lista da UBS foi atualizada com sucesso." });
+      toast({ title: "PDF enviado", description: "A lista pesquisável de medicamentos foi extraída e atualizada." });
     } catch (error) {
       console.error("Erro durante o upload:", error);
       const description = error instanceof Error ? error.message : "Não foi possível salvar o PDF. Tente novamente.";

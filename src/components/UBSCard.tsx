@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MapPin, Clock, User, Download, Calendar, Phone, Building } from 'lucide-react';
+import { MapPin, Clock, User, Download, Calendar, Phone, Building, ListFilter } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import { UBS } from '@/types';
 import QRCodeComponent from './QRCodeComponent';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { formatContactInfo } from '@/lib/contact';
+import MedicationInventory from './MedicationInventory';
 
 interface UBSCardProps {
   ubs: UBS;
@@ -20,6 +21,7 @@ const normalizeText = (text: string) => {
 
 const UBSCard = ({ ubs }: UBSCardProps) => {
   const [isMobile, setIsMobile] = useState(false);
+  const [showInventory, setShowInventory] = useState(false);
   const isMobileHook = useIsMobile();
 
   useEffect(() => {
@@ -147,6 +149,19 @@ const UBSCard = ({ ubs }: UBSCardProps) => {
               />
             </div>
           </div>
+          {ubs.pdfUrl && (
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              aria-expanded={showInventory}
+              onClick={() => setShowInventory((open) => !open)}
+            >
+              <ListFilter className="mr-2 h-4 w-4" />
+              {showInventory ? 'Ocultar lista em texto' : 'Ver lista pesquisável'}
+            </Button>
+          )}
+          {showInventory && <MedicationInventory ubsId={ubs.id} />}
           {ubs.pdfUltimaAtualizacao && (
             <div className="flex items-center justify-center text-xs text-muted-foreground bg-muted/50 p-2 rounded">
               <Calendar className="h-3 w-3 mr-1" />

@@ -4,10 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Edit2, Trash2, Building2, Users, UserPlus, Link, Unlink, Calendar, CheckCircle2, Circle, AlertCircle, Clock, Check, X, Download, RefreshCw, Search, Pill } from 'lucide-react';
+import { Plus, Edit2, Trash2, Building2, Users, UserPlus, Link, Unlink, Calendar, CheckCircle2, Circle, AlertCircle, Clock, Check, X, Download, RefreshCw } from 'lucide-react';
 import { UBS, User } from '@/types';
 import { getUBS, deleteUBS, getUsers, deleteUser, toggleUserUBSLink, getPendingCorrections, approvePDFCorrection, rejectPDFCorrection, CorrecaoPDF, getUpdateChecksHistory, UpdateCheckHistory } from '@/lib/storage';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,7 +13,6 @@ import UserExportPDF from './UserExportPDF';
 import UBSFormModal from './UBSFormModal';
 import UserFormModal from './UserFormModal';
 import CorrectionConfirmationDialog from './CorrectionConfirmationDialog';
-import GestaoAutoCusto from './GestaoAutoCusto';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -44,8 +41,6 @@ const AdminDashboard = () => {
   const [reportPeriod, setReportPeriod] = useState<'week' | 'month'>('week');
   const [reportHistory, setReportHistory] = useState<UpdateCheckHistory[]>([]);
   const [isCorrectionLoading, setIsCorrectionLoading] = useState(false);
-  const [consultaSUSAtiva, setConsultaSUSAtiva] = useState(false);
-  const [showAutoCusto, setShowAutoCusto] = useState(false);
   
   // Modal States
   const [isUBSDialogOpen, setIsUBSDialogOpen] = useState(false);
@@ -150,17 +145,6 @@ const AdminDashboard = () => {
     // Load today's status immediately
     const today = startOfDay(new Date());
     loadUpdateStatuses(today);
-
-    // Load consulta SUS config
-    const loadConfig = async () => {
-      const { data } = await supabase
-        .from('config_sistema')
-        .select('valor')
-        .eq('chave', 'consulta_sus_ativa')
-        .maybeSingle();
-      setConsultaSUSAtiva(data?.valor === 'true');
-    };
-    loadConfig();
 
     // 1. Realtime Subscriptions Setup
     
@@ -391,55 +375,6 @@ const AdminDashboard = () => {
   const reportStartDate = isBefore(calculatedStartDate, MIN_REPORT_DATE) ? MIN_REPORT_DATE : calculatedStartDate;
 
 
-  const toggleConsultaSUS = async (value: boolean) => {
-    try {
-      const { data: existing } = await supabase
-        .from('config_sistema')
-        .select('id')
-        .eq('chave', 'consulta_sus_ativa')
-        .maybeSingle();
-
-      if (existing) {
-        await supabase.from('config_sistema').update({ valor: value ? 'true' : 'false' }).eq('id', existing.id);
-      } else {
-        await supabase.from('config_sistema').insert({ chave: 'consulta_sus_ativa', valor: value ? 'true' : 'false' });
-      }
-
-      setConsultaSUSAtiva(value);
-      toast({
-        title: value ? "Consulta SUS Ativada" : "Consulta SUS Desativada",
-        description: value ? "O botão de consulta está visível na página inicial." : "O botão foi removido da página inicial.",
-      });
-    } catch (error) {
-      toast({ title: "Erro", description: "Erro ao alterar configuração.", variant: "destructive" });
-    }
-  };
-
-  // Se showAutoCusto está ativo, renderiza tela cheia do Alto Custo
-  if (showAutoCusto) {
-    return (
-      <div className="fixed inset-0 z-50 bg-background overflow-auto">
-        <div className="sticky top-0 z-10 bg-background border-b border-border p-3 sm:p-4 flex items-center justify-between">
-          <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-primary flex items-center gap-2">
-            <Pill className="h-5 w-5 sm:h-6 sm:w-6" />
-            Gestão de Medicamentos Alto Custo
-          </h1>
-          <Button 
-            variant="outline" 
-            size="icon"
-            onClick={() => setShowAutoCusto(false)}
-            className="h-9 w-9 sm:h-10 sm:w-10"
-          >
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
-        <div className="p-3 sm:p-4 md:p-6">
-          <GestaoAutoCusto />
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col gap-3 sm:gap-4">
@@ -447,15 +382,10 @@ const AdminDashboard = () => {
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-primary">Dashboard Administrativo</h1>
           <p className="text-xs sm:text-sm text-muted-foreground">Gerencie UBS, usuários e vinculações</p>
         </div>
-        <div className="flex items-center justify-center sm:justify-start gap-2 sm:gap-3 p-2 sm:p-3 bg-primary/5 rounded-lg border border-primary/20">
-          <Search className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
-          <Label htmlFor="consulta-sus-toggle" className="text-xs sm:text-sm font-medium">Consulta SUS</Label>
-          <Switch id="consulta-sus-toggle" checked={consultaSUSAtiva} onCheckedChange={toggleConsultaSUS} />
-        </div>
       </div>
 
       <Tabs defaultValue="updates" className="space-y-4 sm:space-y-6">
-        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 h-auto p-1 gap-1">
+        <TabsList className="grid w-full grid-cols-5 sm:grid-cols-5 h-auto p-1 gap-1">
           <TabsTrigger value="ubs" className="flex items-center justify-center gap-1 sm:gap-2 py-1.5 sm:py-2 text-xs sm:text-sm">
             <Building2 className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden xs:inline sm:inline">UBS</span>
@@ -480,17 +410,6 @@ const AdminDashboard = () => {
                 {pendingCorrections.length}
               </Badge>
             )}
-          </TabsTrigger>
-          <TabsTrigger 
-            value="gestao-auto-custo" 
-            className="flex items-center justify-center gap-1 sm:gap-2 py-1.5 sm:py-2 text-xs sm:text-sm"
-            onClick={(e) => {
-              e.preventDefault();
-              setShowAutoCusto(true);
-            }}
-          >
-            <Pill className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden xs:inline sm:inline">Alto Custo</span>
           </TabsTrigger>
         </TabsList>
 
@@ -944,10 +863,6 @@ const AdminDashboard = () => {
           )}
         </TabsContent>
 
-        {/* --- ABA: GESTÃO AUTO CUSTO --- */}
-        <TabsContent value="gestao-auto-custo" className="space-y-4">
-          <GestaoAutoCusto />
-        </TabsContent>
       </Tabs>
     </div>
   );

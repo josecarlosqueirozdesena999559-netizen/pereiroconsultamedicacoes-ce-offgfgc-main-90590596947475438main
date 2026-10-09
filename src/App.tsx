@@ -12,7 +12,6 @@ const Index = React.lazy(() => import("./pages/Index"));
 const Login = React.lazy(() => import("./pages/Login"));
 const Dashboard = React.lazy(() => import("./pages/Dashboard"));
 const MedicacoesAutoCusto = React.lazy(() => import("./pages/MedicacoesAutoCusto"));
-const ConsultaSUS = React.lazy(() => import("./pages/ConsultaSUS"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
 const PWAInstallPrompt = React.lazy(() => import("./components/PWAInstallPrompt"));
 
@@ -79,7 +78,6 @@ const AdminApp = () => {
                 <Route path="/login" element={<Login />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/medicacoes-auto-custo" element={<MedicacoesAutoCusto />} />
-                <Route path="/consulta-sus" element={<ConsultaSUS />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <PWAInstallPrompt />

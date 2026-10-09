@@ -448,6 +448,12 @@ export const savePDF = async (ubsId: string, file: File): Promise<string> => {
       throw new Error('O arquivo selecionado precisa ser um PDF.');
     }
 
+    const { extractMedicamentosFromPdf } = await import('@/lib/pdfMedicamentos');
+    const medicamentosExtraidos = await extractMedicamentosFromPdf(file);
+    if (medicamentosExtraidos.length === 0) {
+      throw new Error('Não foi possível encontrar nomes de medicamentos neste PDF. Envie um PDF com texto selecionável, não uma imagem digitalizada.');
+    }
+
     // Não usa o nome original: espaços, acentos, "#" e "?" podem fazer a URL
     // pública apontar para uma chave diferente da armazenada.
     const fileName = `${ubsId}/medicamentos.pdf`;
@@ -526,6 +532,20 @@ export const savePDF = async (ubsId: string, file: File): Promise<string> => {
       }
     }
 
+    const { error: cacheError } = await supabase
+      .from('medicamentos_cache')
+      .upsert({
+        posto_id: ubsId,
+        dados: medicamentosExtraidos as any,
+        pdf_url: publicUrl,
+        atualizado_em: uploadedAt,
+      }, { onConflict: 'posto_id' });
+
+    if (cacheError) {
+      console.error('Erro ao guardar a lista de medicamentos extraída:', cacheError);
+      throw new Error('O PDF foi enviado, mas não foi possível guardar a lista extraída. Tente novamente ou contacte o administrador.');
+    }
+
     // Só limpa objetos antigos depois que Storage e banco estão consistentes.
     const { data: existingFiles } = await supabase.storage
       .from('medicacoes_ubs')
@@ -577,6 +597,22 @@ export const getPDF = async (ubsId: string): Promise<any> => {
   } catch (error) {
     console.error('Erro ao buscar PDF:', error);
     return null;
+  }
+};
+
+export const getMedicamentosExtraidos = async (ubsId: string): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('medicamentos_cache')
+      .select('dados')
+      .eq('posto_id', ubsId)
+      .maybeSingle();
+
+    if (error) throw error;
+    return Array.isArray(data?.dados) ? data.dados as any[] : [];
+  } catch (error) {
+    console.error('Erro ao carregar a lista de medicamentos extraída:', error);
+    return [];
   }
 };
 

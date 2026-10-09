@@ -20,6 +20,7 @@ import {
 import PublicHeader from "@/components/PublicHeader";
 import Footer from "@/components/Footer";
 import { ChatWidget } from "@/components/ChatWidget";
+import MedicationInventory from "@/components/MedicationInventory";
 import { formatContactInfo } from "@/lib/contact";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -195,6 +196,10 @@ const UBSDetail = () => {
             )}
           </CardContent>
         </Card>
+
+        <div className="mb-6">
+          <MedicationInventory ubsId={posto.id} />
+        </div>
 
       </main>
 
