@@ -1,185 +1,42 @@
-import { getDocument, GlobalWorkerOptions } from "pdfjs-dist";
-import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
-
+import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
+import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import { parseInventoryPages, inventoryLines, type InventoryLine } from './pdfInventoryParser';
+export type { LoteExtraido, MedicamentoExtraido } from './pdfInventoryParser';
 GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
-
-export interface LoteExtraido {
-  lote: string;
-  validade: string;
-  quantidade: number | null;
-}
-
-export interface MedicamentoExtraido {
-  codigo: string;
-  nome: string;
-  unidade: string;
-  quantidade: number | null;
-  lotes: LoteExtraido[];
-}
-
-type PdfTextItem = {
-  str?: string;
-  transform?: number[];
-};
-
-const normalizeName = (value: string) =>
-  value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLocaleLowerCase("pt-BR")
-    .replace(/\s+/g, " ")
-    .trim();
-
-const parseQuantity = (value: string): number | null => {
-  const normalized = value.replace(/\./g, "").replace(/,/g, "").trim();
-  const quantity = Number.parseInt(normalized, 10);
-  return Number.isFinite(quantity) ? quantity : null;
-};
-
-const parseLote = (line: string): LoteExtraido | null => {
-  const labeledMatch = line.match(
-    /(?:Lote|Lote\s*º|Lote\s*n[ºo]?)\s*:?\s*([A-Z0-9][A-Z0-9.-]*)[\s|,;]*(?:Validade|Vencimento|Dura[çc][ãa]o)\s*:?\s*(\d{2}[/-]\d{2}[/-]\d{2,4})[\s|,;]*(?:(?:Quantidade|Qtd|Estoque)\s*:?\s*)?([\d.,]+)/i
-  );
-  if (labeledMatch) {
-    return {
-      lote: labeledMatch[1],
-      validade: labeledMatch[2],
-      quantidade: parseQuantity(labeledMatch[3]),
-    };
-  }
-
-  const reorderedMatch = line.match(
-    /(?:Validade|Vencimento|Dura[çc][ãa]o)\s*:?\s*(\d{2}[/-]\d{2}[/-]\d{2,4})[\s|,;]*(?:Lote|Lote\s*º|Lote\s*n[ºo]?)\s*:?\s*([A-Z0-9][A-Z0-9.-]*)[\s|,;]*(?:(?:Quantidade|Qtd|Estoque)\s*:?\s*)?([\d.,]+)/i
-  );
-  if (reorderedMatch) {
-    return {
-      lote: reorderedMatch[2],
-      validade: reorderedMatch[1],
-      quantidade: parseQuantity(reorderedMatch[3]),
-    };
-  }
-
-  // Formato do relatório Horus e variações: ... VALIDADE LOTE FATOR BLOQ QTDE [VALOR]
-  // Exemplo: 30/04/2028 DFG2760A 1 N 130 17,55
-  const stockRowMatch = line.match(
-    /(?:^|\s)(\d{2}[/-]\d{2}[/-]\d{2,4})\s+([A-Z0-9][A-Z0-9.-]*)\s+\d+(?:,\d+)?\s+(?:[A-Z]+|SIM|NAO|NÃO)?\s*([\d.,]+)(?:\s+[\d.,]+)?\s*$/i
-  );
-  if (stockRowMatch) {
-    return {
-      lote: stockRowMatch[2],
-      validade: stockRowMatch[1],
-      quantidade: parseQuantity(stockRowMatch[3]),
-    };
-  }
-
-  return null;
-};
-
-const medicationFromLine = (line: string): MedicamentoExtraido | null => {
-  const productMatch = line.match(/(?:Produto|Medicamento|Item|Prod)\s*:\s*(.+?)(?:\s+Unidade\s*:\s*(.*))?$/i);
-  if (!productMatch) return null;
-
-  const productText = productMatch[1].replace(/\s+/g, " ").trim();
-  let codigo = "";
-  let nome = productText;
-
-  const codeMatch = productText.match(/^([A-Z0-9.-]{3,20})\s+(.+)$/i);
-  if (codeMatch && codeMatch[2].length > 2) {
-    codigo = codeMatch[1];
-    nome = codeMatch[2];
-  }
-
-  nome = nome
-    .replace(/\s+ELENCO\s+ESTADUAL\s*$/i, "")
-    .replace(/\s+/g, " ")
-    .trim();
-  if (!nome) return null;
-
-  const unitMatch = productMatch[2]?.match(/^([A-Z.]+)/i);
-  return {
-    codigo,
-    nome,
-    unidade: unitMatch?.[1]?.replace(/\.$/, "") || "",
-    quantidade: null,
-    lotes: [],
-  };
-};
-
-/** Extrai medicamentos, quantidades totais e lotes de um PDF de inventário com texto selecionável. */
-export const extractMedicamentosFromPdf = async (file: File): Promise<MedicamentoExtraido[]> => {
-  const data = new Uint8Array(await file.arrayBuffer());
-  const pdf = await getDocument({ data }).promise;
-  const extracted: MedicamentoExtraido[] = [];
-  let current: MedicamentoExtraido | null = null;
-
-  const saveCurrent = () => {
-    if (current) extracted.push(current);
-    current = null;
-  };
-
+export type ExtractionProgress = (message: string) => void;
+/** Lê texto nativo primeiro; páginas digitalizadas são reconhecidas localmente com OCR. */
+export async function extractMedicamentosFromPdf(file: File, onProgress?: ExtractionProgress) {
+  const pdf = await getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
+  const pages: InventoryLine[][] = [];
+  let worker: Awaited<ReturnType<typeof import('tesseract.js')['createWorker']>> | null = null;
+  let usedOcr = false;
   try {
-    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
-      const page = await pdf.getPage(pageNumber);
-      const content = await page.getTextContent();
-      const rows = new Map<number, Array<{ x: number; text: string }>>();
-
-      for (const rawItem of content.items as PdfTextItem[]) {
-        const text = rawItem.str?.trim();
-        const transform = rawItem.transform;
-        if (!text || !transform) continue;
-        const y = Math.round(transform[5] * 2) / 2;
-        const row = rows.get(y) || [];
-        row.push({ x: transform[4], text });
-        rows.set(y, row);
-      }
-
-      const lines = [...rows.entries()]
-        .sort(([yA], [yB]) => yB - yA)
-        .map(([, row]) => row.sort((a, b) => a.x - b.x).map((item) => item.text).join(" ").replace(/\s+/g, " ").trim());
-
-      for (const line of lines) {
-        const product = medicationFromLine(line);
-        if (product) {
-          saveCurrent();
-          current = product;
-          continue;
+    for (let n = 1; n <= pdf.numPages; n++) {
+      onProgress?.(`Lendo página ${n} de ${pdf.numPages}…`);
+      const page = await pdf.getPage(n); const content = await page.getTextContent();
+      const lines = inventoryLines(content.items.filter(item => "str" in item));
+      const hasText = lines.map(line => line.text).join(' ').replace(/\s/g, '').length > 60;
+      if (hasText) pages.push(lines);
+      else {
+        usedOcr = true;
+        if (!worker) {
+          onProgress?.('Preparando reconhecimento de texto em português…');
+          const { createWorker } = await import('tesseract.js');
+          worker = await createWorker('por', 1, { workerPath: '/ocr/worker.min.js', corePath: '/ocr/core', langPath: '/ocr/lang', logger: info => { if (info.status === 'recognizing text') onProgress?.(`Reconhecendo página ${n} de ${pdf.numPages}: ${Math.round(info.progress * 100)}%`); } });
+          await worker.setParameters({ preserve_interword_spaces: '1' });
         }
-
-        if (!current) continue;
-
-        const lote = parseLote(line);
-        if (lote) current.lotes.push(lote);
-
-        if (/Total\s*:/i.test(line)) {
-          const totalMatch = line.match(/Total\s*:\s*([\d.]+)(?:\s+[\d.,]+)?/i);
-          if (totalMatch) current.quantidade = parseQuantity(totalMatch[1]);
-        }
+        const viewport = page.getViewport({ scale: 2.4 });
+        const canvas = document.createElement('canvas'); canvas.width = Math.ceil(viewport.width); canvas.height = Math.ceil(viewport.height);
+        const context = canvas.getContext('2d'); if (!context) throw new Error('Não foi possível preparar a imagem para leitura.');
+        try {
+          await page.render({ canvasContext: context, viewport }).promise;
+          const result = await worker.recognize(canvas);
+          pages.push(result.data.text.split(/\r?\n/).map(text => ({ text })));
+        } finally { canvas.width = 0; canvas.height = 0; }
       }
+      page.cleanup();
     }
-    saveCurrent();
-  } finally {
-    await pdf.destroy();
-  }
-
-  // O cabeçalho pode repetir-se na quebra entre páginas. Consolidamos
-  // quantidade total e lotes para manter uma entrada completa por medicamento.
-  const unique = new Map<string, MedicamentoExtraido>();
-  for (const medication of extracted) {
-    const key = `${medication.codigo}|${normalizeName(medication.nome)}`;
-    const previous = unique.get(key);
-    if (!previous) {
-      unique.set(key, medication);
-      continue;
-    }
-
-    if (medication.quantidade !== null && (previous.quantidade === null || medication.quantidade > previous.quantidade)) {
-      previous.quantidade = medication.quantidade;
-    }
-
-    const lotes = new Map(previous.lotes.map((lote) => [`${lote.lote}|${lote.validade}`, lote]));
-    medication.lotes.forEach((lote) => lotes.set(`${lote.lote}|${lote.validade}`, lote));
-    previous.lotes = [...lotes.values()];
-  }
-
-  return [...unique.values()].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR", { sensitivity: "base" }));
-};
+    const medications = parseInventoryPages(pages);
+    return medications.map(medication => ({ ...medication, origem: usedOcr ? 'ocr' as const : 'texto' as const }));
+  } finally { if (worker) await worker.terminate(); await pdf.destroy(); }
+}

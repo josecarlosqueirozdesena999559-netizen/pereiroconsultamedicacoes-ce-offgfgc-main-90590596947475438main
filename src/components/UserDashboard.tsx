@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 const UserDashboard = () => {
   const [ubsList, setUbsList] = useState<UBS[]>([]);
   const [uploadingUBS, setUploadingUBS] = useState<string | null>(null);
+  const [currentTime, setCurrentTime] = useState(() => new Date());
   const [updateChecks, setUpdateChecks] = useState<
     Record<string, { manha: boolean; tarde: boolean }>
   >({});
@@ -19,58 +20,39 @@ const UserDashboard = () => {
   const { toast } = useToast();
 
   const todayFormattedDate = useMemo(
-    () => new Date().toLocaleDateString("pt-BR"),
-    []
+    () => currentTime.toLocaleDateString("pt-BR", { timeZone: "America/Fortaleza" }),
+    [currentTime]
   );
 
   const getUploadScheduleInfo = useMemo(() => {
-    const now = new Date();
-    const dayOfWeek = now.getDay();
-    const hour = now.getHours();
-
-    const isFriday = dayOfWeek === 5;
-    const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
-    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-
-    let currentPeriod: "manha" | "tarde" | null = null;
-    let isWithinSchedule = false;
-    let currentPeriodLabel = "";
-    let scheduleMessage = "";
-
-    if (isWeekend) {
-      scheduleMessage = "Uploads não disponíveis nos finais de semana.";
-    } else if (isFriday) {
-      isWithinSchedule = hour >= 7 && hour < 17;
-      if (isWithinSchedule) {
-        currentPeriod = hour < 12 ? "manha" : "tarde";
-        currentPeriodLabel = "Manhã + Tarde";
-        scheduleMessage = "Sexta: upload único conta como manhã e tarde (07h-17h).";
-      } else {
-        scheduleMessage = "Fora do horário de envio de sexta (07h-17h).";
-      }
-    } else if (isWeekday) {
-      if (hour >= 7 && hour < 12) {
-        currentPeriod = "manha";
-        isWithinSchedule = true;
-        currentPeriodLabel = "Manhã";
-        scheduleMessage = "Período da manhã disponível (07h-11h).";
-      } else if (hour >= 12 && hour < 17) {
-        currentPeriod = "tarde";
-        isWithinSchedule = true;
-        currentPeriodLabel = "Tarde";
-        scheduleMessage = "Período da tarde disponível (12h-17h).";
-      } else {
-        scheduleMessage = "Fora do horário de envio (07h-11h / 12h-17h).";
-      }
-    }
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/Fortaleza",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    }).formatToParts(currentTime);
+    const hour = Number(parts.find((part) => part.type === "hour")?.value || 0);
+    const minute = Number(parts.find((part) => part.type === "minute")?.value || 0);
+    const totalMinutes = hour * 60 + minute;
+    const currentPeriod = totalMinutes >= 7 * 60 && totalMinutes < 11 * 60
+      ? "manha" as const
+      : totalMinutes >= 13 * 60 && totalMinutes < 17 * 60
+      ? "tarde" as const
+      : null;
 
     return {
-      isFriday,
-      isWithinSchedule,
+      isWithinSchedule: currentPeriod !== null,
       currentPeriod,
-      currentPeriodLabel,
-      scheduleMessage,
+      currentPeriodLabel: currentPeriod === "manha" ? "Manhã" : currentPeriod === "tarde" ? "Tarde" : "",
+      scheduleMessage: currentPeriod
+        ? "Período da " + (currentPeriod === "manha" ? "manhã" : "tarde") + " disponível (" + (currentPeriod === "manha" ? "07h-11h" : "13h-17h") + ")."
+        : "Envios todos os dias: manhã 07h-11h e tarde 13h-17h.",
     };
+  }, [currentTime]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setCurrentTime(new Date()), 30000);
+    return () => window.clearInterval(timer);
   }, []);
 
   useEffect(() => {
@@ -137,27 +119,19 @@ const UserDashboard = () => {
     });
 
     try {
+      const { currentPeriod } = getUploadScheduleInfo;
       const newTimestamp = await savePDF(ubsId, file);
 
-      if (newTimestamp) {
+      if (newTimestamp && currentPeriod) {
         const currentChecks = await getUpdateChecks(user.id, ubsId);
-        const manhaChecked = currentChecks?.manha || false;
-        const tardeChecked = currentChecks?.tarde || false;
-        const { isFriday, currentPeriod } = getUploadScheduleInfo;
-
-        if (isFriday) {
-          if (!manhaChecked) await saveUpdateCheck(user.id, ubsId, "manha");
-          if (!tardeChecked) await saveUpdateCheck(user.id, ubsId, "tarde");
-        } else if (currentPeriod) {
-          if (currentPeriod === "manha" && !manhaChecked) {
-            await saveUpdateCheck(user.id, ubsId, "manha");
-          } else if (currentPeriod === "tarde" && !tardeChecked) {
-            await saveUpdateCheck(user.id, ubsId, "tarde");
-          }
-        }
+        const alreadySent = currentPeriod === "manha" ? currentChecks?.manha : currentChecks?.tarde;
+        if (!alreadySent) await saveUpdateCheck(user.id, ubsId, currentPeriod);
       }
 
-      toast({ title: "PDF enviado", description: "A lista pesquis�vel de medicamentos foi extra�da e atualizada." });
+      toast({
+        title: "Envio da " + (currentPeriod === "manha" ? "manhã" : "tarde") + " confirmado",
+        description: "O PDF foi recebido e a lista pesquisável de medicamentos foi atualizada.",
+      });
     } catch (error) {
       console.error("Erro durante o upload:", error);
       const description = error instanceof Error ? error.message : "N�o foi poss�vel salvar o PDF. Tente novamente.";
@@ -227,19 +201,11 @@ const UserDashboard = () => {
                   currentPeriod,
                   currentPeriodLabel,
                   scheduleMessage,
-                  isFriday,
                 } = getUploadScheduleInfo;
 
                 let canUploadNow = isWithinSchedule;
-                if (canUploadNow) {
-                  if (isFriday) {
-                    canUploadNow = !manhaChecked && !tardeChecked;
-                  } else if (currentPeriod === "manha") {
-                    canUploadNow = !manhaChecked;
-                  } else if (currentPeriod === "tarde") {
-                    canUploadNow = !tardeChecked;
-                  }
-                }
+                if (currentPeriod === "manha") canUploadNow = canUploadNow && !manhaChecked;
+                if (currentPeriod === "tarde") canUploadNow = canUploadNow && !tardeChecked;
 
                 return (
                   <Card
@@ -326,7 +292,7 @@ const UserDashboard = () => {
                             >
                               Tarde
                             </p>
-                            <p className="text-xs text-muted-foreground">12h - 17h</p>
+                            <p className="text-xs text-muted-foreground">13h - 17h</p>
                           </div>
                         </div>
                       </div>

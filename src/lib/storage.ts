@@ -2,6 +2,13 @@ import { UBS, User } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDateTime } from '@/lib/utils';
 
+const getPereiroDay = () => new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'America/Fortaleza',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit'
+}).format(new Date());
+
 const STORAGE_KEYS = {
   AUTH: 'pereiro_auth'
 };
@@ -442,7 +449,7 @@ export const clearAuth = (): void => {
 };
 
 // PDF operations
-export const savePDF = async (ubsId: string, file: File): Promise<string> => {
+export const savePDF = async (ubsId: string, file: File, onProgress?: (message: string) => void): Promise<string> => {
   try {
     const isPdf =
       file.type === 'application/pdf' ||
@@ -453,9 +460,9 @@ export const savePDF = async (ubsId: string, file: File): Promise<string> => {
     }
 
     const { extractMedicamentosFromPdf } = await import('@/lib/pdfMedicamentos');
-    const medicamentosExtraidos = await extractMedicamentosFromPdf(file);
+    const medicamentosExtraidos = await extractMedicamentosFromPdf(file, onProgress);
     if (medicamentosExtraidos.length === 0) {
-      throw new Error('Não foi possível encontrar nomes de medicamentos neste PDF. Envie um PDF com texto selecionável, não uma imagem digitalizada.');
+      throw new Error('Não foi possível encontrar nomes de medicamentos neste PDF. Confira se o documento contém uma lista legível de medicamentos.');
     }
 
     // Não usa o nome original: espaços, acentos, "#" e "?" podem fazer a URL
@@ -623,7 +630,7 @@ export const getMedicamentosExtraidos = async (ubsId: string): Promise<any[]> =>
 // Update Checks operations (mantidas)
 export const getUpdateChecks = async (userId: string, ubsId: string): Promise<{ manha: boolean; tarde: boolean } | null> => {
   try {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getPereiroDay();
     
     // Verificar se o cleanup_old_update_checks já rodou hoje
     // Não é necessário rodar aqui, pois o AdminDashboard já faz isso no useEffect.
@@ -647,7 +654,7 @@ export const getUpdateChecks = async (userId: string, ubsId: string): Promise<{ 
 
 export const saveUpdateCheck = async (userId: string, ubsId: string, period: 'manha' | 'tarde'): Promise<boolean> => {
   try {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getPereiroDay();
     
     // Verificar se já existe um registro para hoje
     const { data: existing } = await supabase
@@ -761,7 +768,7 @@ export const getPendingCorrections = async (): Promise<CorrecaoPDF[]> => {
 
 export const approvePDFCorrection = async (correctionId: string, ubsId: string, userId: string, periodo: 'manha' | 'tarde'): Promise<boolean> => {
   try {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getPereiroDay();
 
     // 1. Atualizar o status da solicitação para 'aprovado'
     const { error: updateError } = await supabase
