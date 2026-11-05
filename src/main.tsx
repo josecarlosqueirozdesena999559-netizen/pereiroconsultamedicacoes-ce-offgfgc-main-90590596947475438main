@@ -2,7 +2,7 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { Capacitor } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
-import Maintenance from "./pages/Maintenance";
+import App from "./App.tsx";
 import "./index.css";
 
 // Configuração do StatusBar para Android/iOS (apenas em plataforma nativa)
@@ -31,6 +31,6 @@ if ("serviceWorker" in navigator) {
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <Maintenance />
+    <App />
   </React.StrictMode>
 );
