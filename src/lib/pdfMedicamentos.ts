@@ -38,7 +38,7 @@ const parseQuantity = (value: string): number | null => {
 
 const parseLote = (line: string): LoteExtraido | null => {
   const labeledMatch = line.match(
-    /(?:Lote|Lote\s*º|Lote\s*n[ºo]?)\s*:?\s*([A-Z0-9][A-Z0-9.-]*)[\s|,;]*(?:Validade|Vencimento)\s*:?\s*(\d{2}[/-]\d{2}[/-]\d{2,4})[\s|,;]*(?:(?:Quantidade|Qtd|Estoque)\s*:?\s*)?([\d.,]+)/i
+    /(?:Lote|Lote\s*º|Lote\s*n[ºo]?)\s*:?\s*([A-Z0-9][A-Z0-9.-]*)[\s|,;]*(?:Validade|Vencimento|Dura[çc][ãa]o)\s*:?\s*(\d{2}[/-]\d{2}[/-]\d{2,4})[\s|,;]*(?:(?:Quantidade|Qtd|Estoque)\s*:?\s*)?([\d.,]+)/i
   );
   if (labeledMatch) {
     return {
@@ -49,7 +49,7 @@ const parseLote = (line: string): LoteExtraido | null => {
   }
 
   const reorderedMatch = line.match(
-    /(?:Validade|Vencimento)\s*:?\s*(\d{2}[/-]\d{2}[/-]\d{2,4})[\s|,;]*(?:Lote|Lote\s*º|Lote\s*n[ºo]?)\s*:?\s*([A-Z0-9][A-Z0-9.-]*)[\s|,;]*(?:(?:Quantidade|Qtd|Estoque)\s*:?\s*)?([\d.,]+)/i
+    /(?:Validade|Vencimento|Dura[çc][ãa]o)\s*:?\s*(\d{2}[/-]\d{2}[/-]\d{2,4})[\s|,;]*(?:Lote|Lote\s*º|Lote\s*n[ºo]?)\s*:?\s*([A-Z0-9][A-Z0-9.-]*)[\s|,;]*(?:(?:Quantidade|Qtd|Estoque)\s*:?\s*)?([\d.,]+)/i
   );
   if (reorderedMatch) {
     return {
@@ -59,10 +59,10 @@ const parseLote = (line: string): LoteExtraido | null => {
     };
   }
 
-  // Formato do relatório Horus: ... VALIDADE LOTE FATOR BLOQ QTDE VALOR
+  // Formato do relatório Horus e variações: ... VALIDADE LOTE FATOR BLOQ QTDE [VALOR]
   // Exemplo: 30/04/2028 DFG2760A 1 N 130 17,55
   const stockRowMatch = line.match(
-    /(?:^|\s)(\d{2}[/-]\d{2}[/-]\d{4})\s+([A-Z0-9][A-Z0-9.-]*)\s+\d+\s+[A-Z]\s+([\d.,]+)\s+[\d.,]+\s*$/i
+    /(?:^|\s)(\d{2}[/-]\d{2}[/-]\d{2,4})\s+([A-Z0-9][A-Z0-9.-]*)\s+\d+(?:,\d+)?\s+(?:[A-Z]+|SIM|NAO|NÃO)?\s*([\d.,]+)(?:\s+[\d.,]+)?\s*$/i
   );
   if (stockRowMatch) {
     return {
@@ -76,22 +76,28 @@ const parseLote = (line: string): LoteExtraido | null => {
 };
 
 const medicationFromLine = (line: string): MedicamentoExtraido | null => {
-  const productMatch = line.match(/Produto\s*:\s*(.+?)\s+Unidade\s*:\s*(.*)$/i);
+  const productMatch = line.match(/(?:Produto|Medicamento|Item|Prod)\s*:\s*(.+?)(?:\s+Unidade\s*:\s*(.*))?$/i);
   if (!productMatch) return null;
 
   const productText = productMatch[1].replace(/\s+/g, " ").trim();
-  const codeMatch = productText.match(/^([A-Z]{1,4}[A-Z0-9.-]*)\s+(.+)$/i);
-  if (!codeMatch) return null;
+  let codigo = "";
+  let nome = productText;
 
-  const nome = codeMatch[2]
+  const codeMatch = productText.match(/^([A-Z0-9.-]{3,20})\s+(.+)$/i);
+  if (codeMatch && codeMatch[2].length > 2) {
+    codigo = codeMatch[1];
+    nome = codeMatch[2];
+  }
+
+  nome = nome
     .replace(/\s+ELENCO\s+ESTADUAL\s*$/i, "")
     .replace(/\s+/g, " ")
     .trim();
   if (!nome) return null;
 
-  const unitMatch = productMatch[2].match(/^([A-Z.]+)/i);
+  const unitMatch = productMatch[2]?.match(/^([A-Z.]+)/i);
   return {
-    codigo: codeMatch[1],
+    codigo,
     nome,
     unidade: unitMatch?.[1]?.replace(/\.$/, "") || "",
     quantidade: null,
