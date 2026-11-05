@@ -444,7 +444,11 @@ export const clearAuth = (): void => {
 // PDF operations
 export const savePDF = async (ubsId: string, file: File): Promise<string> => {
   try {
-    if (file.type && file.type !== 'application/pdf') {
+    const isPdf =
+      file.type === 'application/pdf' ||
+      file.type === 'application/x-pdf' ||
+      file.name.toLowerCase().endsWith('.pdf');
+    if (!isPdf) {
       throw new Error('O arquivo selecionado precisa ser um PDF.');
     }
 

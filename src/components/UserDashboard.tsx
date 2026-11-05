@@ -106,17 +106,35 @@ const UserDashboard = () => {
   const handleFileUpload = async (ubsId: string, file: File) => {
     if (!file || !user) return;
 
-    if (file.type !== "application/pdf") {
-      toast({ title: "Arquivo inválido", description: "Envie apenas arquivos PDF.", variant: "destructive" });
+    const isPdf =
+      file.type === "application/pdf" ||
+      file.type === "application/x-pdf" ||
+      file.name.toLowerCase().endsWith(".pdf");
+
+    if (!isPdf) {
+      toast({
+        title: "Arquivo invÃ¡lido",
+        description: "Envie apenas arquivos PDF.",
+        variant: "destructive",
+      });
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      toast({ title: "Arquivo muito grande", description: "O PDF deve ter no máximo 10MB.", variant: "destructive" });
+    const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
+    if (file.size > MAX_FILE_SIZE) {
+      toast({
+        title: "Arquivo muito grande",
+        description: `O arquivo tem ${(file.size / (1024 * 1024)).toFixed(1)}MB. O PDF deve ter no mÃ¡ximo 100MB.`,
+        variant: "destructive",
+      });
       return;
     }
 
     setUploadingUBS(ubsId);
+    toast({
+      title: "Enviando PDF...",
+      description: `Iniciando upload de "${file.name}" (${(file.size / (1024 * 1024)).toFixed(1)}MB)... `,
+    });
 
     try {
       const newTimestamp = await savePDF(ubsId, file);
@@ -139,10 +157,10 @@ const UserDashboard = () => {
         }
       }
 
-      toast({ title: "PDF enviado", description: "A lista pesquisável de medicamentos foi extraída e atualizada." });
+      toast({ title: "PDF enviado", description: "A lista pesquisï¿½vel de medicamentos foi extraï¿½da e atualizada." });
     } catch (error) {
       console.error("Erro durante o upload:", error);
-      const description = error instanceof Error ? error.message : "Não foi possível salvar o PDF. Tente novamente.";
+      const description = error instanceof Error ? error.message : "Nï¿½o foi possï¿½vel salvar o PDF. Tente novamente.";
       toast({ title: "Erro ao enviar PDF", description, variant: "destructive" });
     } finally {
       setUploadingUBS(null);
